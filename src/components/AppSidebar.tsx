@@ -6,6 +6,13 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -135,6 +142,12 @@ const menuItems = [
 export function AppSidebar() {
   const { user } = useAuth();
   const { open } = useSidebar();
+  const navigate = useNavigate();
+  
+    const handleLogout = () => {
+      user.logout();
+      navigate("/");
+    };
   return (
     <Sidebar className="border-r border-border">
       <SidebarContent className="bg-[sidebar-accent-foreground] bg-teal-900">
@@ -164,17 +177,43 @@ export function AppSidebar() {
                   <span className="font-semibold text-primary-foreground">
                     {displayName}
                   </span>
-                  <span className="text-primary-foreground/80 text-xs">
-                    {email}
-                  </span>
-                  {open && (role || staffId) ? (
-                    <div className="mt-1 text-[11px] text-primary-foreground/70">
-                      {role ? <span className="mr-2">{role}</span> : null}
-                      {staffId ? (
-                        <span className="text-xs">ID: {staffId}</span>
-                      ) : null}
-                    </div>
-                  ) : null}
+                {/* goz */}
+                  <div className="flex items-center gap-2 ml-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <div className="flex items-center gap-2 cursor-pointer">
+                          <Avatar className="h-8 w-8">
+                            {user.user?.Photo ||
+                            user.user?.avatar ||
+                            user.user?.picture ? (
+                              <AvatarImage
+                                src={
+                                  user.user?.Photo ||
+                                  user.user?.avatar ||
+                                  user.user?.picture
+                                }
+                              />
+                            ) : (
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                {(user.user?.StaffName || user.user?.name || "U")[0]}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <span className="text-sm font-medium">
+                            {user.user?.StaffName || user.user?.name || "User"}
+                          </span>
+                        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => navigate("/profile")}>
+                          Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={handleLogout}>
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
               </>
             );

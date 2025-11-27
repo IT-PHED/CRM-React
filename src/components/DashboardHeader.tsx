@@ -30,7 +30,6 @@ export function DashboardHeader() {
 
       <div className="flex items-center gap-2">
         <img src={phedLogo} alt="PHED" className="h-8 w-auto" />
-        <span className="text-xl font-semibold text-primary">PHED-CRM</span>
       </div>
 
       <div className="flex-1 max-w-md mx-4">
