@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Complaints from "./pages/Complaints";
 import NotFound from "./pages/NotFound";
+import NewComplaint from "./pages/NewComplaint";
+
 import { DashboardLayout } from "./components/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,14 @@ const App = () => (
               element={
                 <DashboardLayout>
                   <Complaints />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/new-complaint"
+              element={
+                <DashboardLayout>
+                  <NewComplaint />
                 </DashboardLayout>
               }
             />

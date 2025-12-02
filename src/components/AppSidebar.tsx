@@ -4,6 +4,7 @@ import {
   Settings,
   BarChart3,
   ClipboardCheck,
+  FileQuestion,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -42,11 +43,16 @@ const menuItems = [
     icon: Home,
     url: "/dashboard",
   },
+
   {
     title: "Complaints/Requests",
     icon: FileText,
     url: "/complaints",
     subItems: [
+      {
+        title: "New Complaint",
+        url: "/new-complaint",
+      },
       {
         title: "All Complaints",
         url: "/complaints/all",

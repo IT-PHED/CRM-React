@@ -9,12 +9,8 @@ import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/images/bg.jpg";
 import { loginUser } from "../services/authService";
 import { useAuth } from "../contexts/AuthContext";
+import phedlogo from "../assets/phed-logo.png";
 import "./LoginForm.css";
-
-const DEMO_CREDENTIALS = {
-  username: "demo@auroracrm.com",
-  password: "Pass@123",
-};
 
 export default function Login() {
   type FormData = { username: string; password: string };
@@ -38,9 +34,6 @@ export default function Login() {
     }
   };
 
-  const handlePrefill = () => {
-    setFormData(DEMO_CREDENTIALS);
-  };
 
   useEffect(() => {
     const remembered = localStorage.getItem("rememberedUser");
@@ -102,20 +95,17 @@ export default function Login() {
         </section>
 
         <section className="login-panel">
-          <div className="panel-header">
-            <h2>Welcome back</h2>
-            <button type="button" className="link" onClick={handlePrefill}>
-              Use demo credentials
-            </button>
+          <div className="panel-header justify-center">
+            <h2><img src={ phedlogo } alt="PHED LOGO" width="200"/></h2>
           </div>
           <p className="panel-subtitle">
-            Sign in to continue to your dashboard
+            Welcome back
           </p>
 
           {error && <p className="alert">{error}</p>}
 
           <form className="login-form" onSubmit={handleSubmit}>
-            <label htmlFor="username">Email or username</label>
+            <label htmlFor="username">Email or Staff ID</label>
             <input
               id="username"
               name="username"
