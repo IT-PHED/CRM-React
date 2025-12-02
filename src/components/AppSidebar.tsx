@@ -156,7 +156,7 @@ export function AppSidebar() {
           {(() => {
             const displayName =
               user?.StaffName || user?.name || user?.Staff || "Guest User";
-            const email = user?.Email || user?.email || "no-email@local";
+            // const email = user?.Email || user?.email || "no-email@local";
             const staffId =
               user?.StaffId || user?.StaffID || user?.StaffId || "";
             const role = user?.Role || user?.role || "";
@@ -177,43 +177,9 @@ export function AppSidebar() {
                   <span className="font-semibold text-primary-foreground">
                     {displayName}
                   </span>
-                {/* goz */}
-                  <div className="flex items-center gap-2 ml-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div className="flex items-center gap-2 cursor-pointer">
-                          <Avatar className="h-8 w-8">
-                            {user.user?.Photo ||
-                            user.user?.avatar ||
-                            user.user?.picture ? (
-                              <AvatarImage
-                                src={
-                                  user.user?.Photo ||
-                                  user.user?.avatar ||
-                                  user.user?.picture
-                                }
-                              />
-                            ) : (
-                              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                {(user.user?.StaffName || user.user?.name || "U")[0]}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <span className="text-sm font-medium">
-                            {user.user?.StaffName || user.user?.name || "User"}
-                          </span>
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => navigate("/profile")}>
-                          Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={handleLogout}>
-                          Logout
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <span className="font-semibold text-primary-foreground">
+                      {user.StaffId} | User
+                  </span>
                 </div>
               </>
             );
