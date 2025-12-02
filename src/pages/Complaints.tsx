@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -271,6 +272,22 @@ export default function Complaints() {
                 <SelectItem value="Closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="flex items-center justify-center">
+            <Tabs defaultValue="one" className="w-full">
+              <TabsList>
+                <TabsTrigger value="one">Complaint History</TabsTrigger>
+                <TabsTrigger value="two">Billing</TabsTrigger>
+                <TabsTrigger value="three">Collection</TabsTrigger>
+                <TabsTrigger value="four">Credit/Debit</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="one">Content 1</TabsContent>
+              <TabsContent value="two">Content 2</TabsContent>
+              <TabsContent value="three">Content 3</TabsContent>
+              <TabsContent value="four">Content 4</TabsContent>
+            </Tabs>
           </div>
 
           <div className="rounded-md border">
