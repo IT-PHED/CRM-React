@@ -54,10 +54,6 @@ const menuItems = [
         url: "/new-complaint",
       },
       {
-        title: "All Complaints",
-        url: "/complaints/all",
-      },
-      {
         title: "Pending",
         url: "/complaints/pending",
       },
@@ -68,6 +64,10 @@ const menuItems = [
       {
         title: "Escalated",
         url: "/complaints/escalated",
+      },
+      {
+        title: "All Complaints",
+        url: "/complaints/all",
       },
     ],
   },

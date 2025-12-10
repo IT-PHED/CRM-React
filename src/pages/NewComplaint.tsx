@@ -323,7 +323,7 @@ return (
               <TabsTrigger value="complaints">Complaint History</TabsTrigger>
               <TabsTrigger value="billing">Billing History</TabsTrigger>
               <TabsTrigger value="collection">Collection</TabsTrigger>
-              <TabsTrigger value="credit">Credit</TabsTrigger>
+              <TabsTrigger value="credit">Credit/Debit</TabsTrigger>
             </TabsList>
             <TabsContent value="complaints" className="mt-4">
               <Table>
