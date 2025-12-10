@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./components/LoginForm";
+import OtpForm from "./components/OtpForm";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Complaints from "./pages/Complaints";
@@ -26,6 +27,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/index" element={<Index />} />
+            <Route
+              path="/otp-verification"
+              element={<OtpForm />} 
+            />
             <Route
               path="/dashboard"
               element={
