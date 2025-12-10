@@ -11,10 +11,12 @@ import {
 export type UserShape = {
   Id?: number;
   StaffName?: string;
-  StaffId?: string | number;
-  Email?: string;
+  StaffId?: string;
+  Email: string;
+  Region: string;
   PhoneNo?: string;
-  Role?: string;
+  Role?: number;
+  Department?: string;
   [k: string]: any;
 };
 

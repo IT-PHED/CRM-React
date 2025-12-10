@@ -52,7 +52,7 @@ export default function Login() {
 
       // check for success and verified status
       if (result.success === true && result.data?.data?.isVerified){
-        const serverUser = result.data?.userProfile || null;
+        const serverUser = result.data?.data?.userProfile || null;
         auth.login(result.data?.token, serverUser);
         if (remember) {
           localStorage.setItem("rememberedUser", formData.username);
