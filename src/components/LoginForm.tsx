@@ -51,7 +51,7 @@ export default function Login() {
       const result = await login(formData.username, formData.password);
 
       // check for success and verified status
-      if (result.success === true && result.data?.isVerified){
+      if (result.success === true && result.data?.data?.isVerified){
         const serverUser = result.data?.userProfile || null;
         auth.login(result.data?.token, serverUser);
         if (remember) {
