@@ -7,7 +7,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/images/bg.jpg";
-import { loginUser } from "../services/authService";
+import { login } from "../services/authService";
 import { useAuth } from "../contexts/AuthContext";
 import phedlogo from "../assets/phed-logo.png";
 import "./LoginForm.css";
@@ -48,21 +48,22 @@ export default function Login() {
     setError("");
 
     try {
-      const result = await loginUser(formData.username, formData.password);
+      const result = await login(formData.username, formData.password);
 
-      // backend may return token (result.token) for auth or an object with successful status + User
-      if (result?.token || result?.User || result?.user) {
-        // update auth context which persists token and user
-        const serverUser = result?.User || result?.user || null;
-        auth.login(result?.token, serverUser);
+      // check for success and verified status
+      if (result.success === true && result.data?.isVerified){
+        const serverUser = result.data?.userProfile || null;
+        auth.login(result.data?.token, serverUser);
         if (remember) {
           localStorage.setItem("rememberedUser", formData.username);
         } else {
           localStorage.removeItem("rememberedUser");
         }
         navigate("/dashboard");
+      } else if (result.success === true && !result.data?.data?.isVerified) {
+        navigate("/otp-verification", { state: { saveUser: remember, userProfile: result.data?.data?.userProfile} });
       } else {
-        setError("Unable to authenticate. Please try again.");
+        setError("Invalid username or password.");
       }
     } catch (err: any) {
       setError(err?.message || "Invalid username or password");
