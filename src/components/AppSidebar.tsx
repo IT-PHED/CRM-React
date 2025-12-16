@@ -184,7 +184,7 @@ export function AppSidebar() {
                     {displayName}
                   </span>
                   <span className="font-semibold text-primary-foreground">
-                      {user.StaffId} | User
+                      {/* {user.StaffId} | User */}
                   </span>
                 </div>
               </>
