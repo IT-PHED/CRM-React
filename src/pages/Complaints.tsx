@@ -274,7 +274,7 @@ export default function Complaints() {
             </Select>
           </div>
           
-          <div className="flex items-center justify-center">
+         {/* <div className="flex items-center justify-center">
             <Tabs defaultValue="one" className="w-full">
               <TabsList>
                 <TabsTrigger value="one">Complaint History</TabsTrigger>
@@ -288,7 +288,7 @@ export default function Complaints() {
               <TabsContent value="three">Content 3</TabsContent>
               <TabsContent value="four">Content 4</TabsContent>
             </Tabs>
-          </div>
+          </div> */}
 
           <div className="rounded-md border">
             <Table>
