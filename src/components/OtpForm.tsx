@@ -29,7 +29,7 @@ export default function OtpForm() {
     setError("");
 
     try {
-      console.log("Email:", userProfile?.emailId, "status:", saveUser);
+
       const result = await verifyOtp(userProfile?.emailId, userProfile?.userName, otp);
 
       if (result.success === true) {

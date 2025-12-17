@@ -62,12 +62,12 @@ export function DashboardHeader() {
                     />
                   ) : (
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      {(auth.user?.StaffName || auth.user?.name || "U")[0]}
+                      {(auth.user?.userFName || "U")[0]}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 <span className="text-sm font-medium">
-                  {auth.user?.StaffName || auth.user?.name || "User"}
+                  {auth.user?.userFName || "User"}
                 </span>
               </div>
             </DropdownMenuTrigger>

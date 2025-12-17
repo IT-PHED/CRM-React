@@ -1,5 +1,5 @@
-import axios from "axios";
-import { useState, useEffect } from "react";
+import axiosClient from "@/services/axiosClient";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,43 +28,99 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Search, ArrowLeft } from "lucide-react";
-
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+import { uploadFile } from "../services/fileUploadService";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function NewComplaint() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [customerData, setCustomerData] = useState(null);
+  const [customerData, setCustomerData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const [priorities, setPriorities] = useState<any[]>([]);
-    const [sources, setSources] = useState<any[]>([]);
+  const [source, setsource] = useState<any[]>([]);
   const [complaintTypes, setComplaintTypes] = useState<any[]>([]);
   const [filteredSubtypes, setFilteredSubtypes] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const { user } = useAuth();
+
+  // Ref for the file input to clear it programmatically
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    complaintType: "",
-    complaintSubtype: "",
+    complaintTypeId: "",
+    complaintSubTypeId: "",
+    source: "",
     priority: "",
-    sources: "",
-    category: "",
-    description: "",
-    assignedTo: "",
-    contactMethod: "",
+    email: "",
+    mobileNumber: "",
+    assignToStaffId: "",
+    assignToEmail: "",
+    departmentId: "",
+    correctMeterReading: 0,
+    remark: "",
+    file: "",
+    mediaLink: "",
   });
+
+  const handleAttachmentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const result = await uploadFile({
+        file,
+        uploadedBy: user.userName, // user?.userName, // from session
+      });
+
+      // Check logic based on user requirement
+      // Assuming 'result' comes back as the full response or the data object.
+      // Adjusting validation to ensure we have a valid path.
+
+      console.log(result.filePath);
+      console.log(result.fileUrl);
+
+      // attach to ticket payload
+      setFormData((prev) => ({
+        ...prev,
+        file: result.filePath, // storing as 'file' based on submit payload
+        mediaLink: result.fileUrl,
+      }));
+
+      alert('Upload Added Successfully');
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Failed to upload file");
+
+      // Clear the input field
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      // Clear the state related to file
+      setFormData((prev) => ({
+        ...prev,
+        file: "",
+        mediaLink: "",
+      }));
+    }
+  };
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const [prioritiesRes, typesRes, sourcesRes] = await Promise.all([
-          axios.get(`${BASE_URL}configuration/priority`),
-          axios.get(`${BASE_URL}configuration/complaint-types-and-sub`),
-          axios.get(`${BASE_URL}configuration/sources`),
+        const [prioritiesRes, typesRes, sourceRes] = await Promise.all([
+          axiosClient.get(`configuration/priority`),
+          axiosClient.get(`configuration/complaint-types-and-sub`),
+          axiosClient.get(`configuration/sources`),
         ]);
 
         setPriorities(prioritiesRes.data.data || []);
         setComplaintTypes(typesRes.data.data || []);
-        setSources(sourcesRes.data.data || []);
+        setsource(sourceRes.data.data || []);
       } catch (error) {
         console.error("Error fetching dropdown data:", error);
       }
@@ -74,23 +130,64 @@ export default function NewComplaint() {
   }, []);
 
   useEffect(() => {
-    if (formData.complaintType) {
+    const fetchEmployees = async () => {
+      if (!formData.complaintTypeId || !customerData?.accountNo) {
+        setEmployees([]);
+        return;
+      }
+
       const selectedType = complaintTypes.find(
-        (type) => type.id === formData.complaintType
+        (t) => t.id === formData.complaintTypeId
+      );
+
+      if (!selectedType?.departmentId) return;
+
+      setLoadingEmployees(true);
+
+      try {
+        const res = await axiosClient.get(
+          `employees/regional-department-member`,
+          {
+            params: {
+              DepartmentId: selectedType.departmentId,
+              AccountNumber: customerData.accountNo,
+            },
+          }
+        );
+
+        setEmployees(res.data.data || []);
+      } catch (err) {
+        console.error("Employee fetch failed", err);
+        setEmployees([]);
+      } finally {
+        setLoadingEmployees(false);
+      }
+    };
+
+    fetchEmployees();
+  }, [formData.complaintTypeId, customerData]);
+
+  // FIX: Subtype Logic
+  useEffect(() => {
+    if (formData.complaintTypeId) {
+      const selectedType = complaintTypes.find(
+        (type) => type.id === formData.complaintTypeId
       );
       setFilteredSubtypes(selectedType?.subTypes || []);
-      setFormData((prev) => ({ ...prev, complaintSubtype: "" }));
+
+      // Reset the correct state key
+      setFormData((prev) => ({ ...prev, complaintSubTypeId: "" }));
     } else {
       setFilteredSubtypes([]);
     }
-  }, [formData.complaintType, complaintTypes]);
+  }, [formData.complaintTypeId, complaintTypes]);
 
   const searchCustomer = async () => {
     if (!searchQuery.trim()) return;
 
     setLoading(true);
     try {
-      const { data } = await axios.get(`${BASE_URL}customer/search-filter`, {
+      const { data } = await axiosClient.get(`customer/search-filter`, {
         params: {
           ConsumerName: searchQuery,
           ConsumerNumber: searchQuery,
@@ -144,44 +241,65 @@ export default function NewComplaint() {
     setCustomerData(null);
     setSearchResults([]);
     setSearchQuery("");
+    // Clear file input manually
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
     setFormData({
-      complaintType: "",
-      complaintSubtype: "",
+      complaintTypeId: "",
+      complaintSubTypeId: "",
+      source: "",
       priority: "",
-      sources:"",
-      category: "",
-      description: "",
-      assignedTo: "",
-      contactMethod: "",
+      email: "",
+      mobileNumber: "",
+      assignToStaffId: "",
+      assignToEmail: "",
+      departmentId: "",
+      correctMeterReading: 0,
+      remark: "",
+      file: "",
+      mediaLink: "",
     });
   };
+
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.complaintType ||
-      !formData.priority ||
-      !formData.description
-    ) {
-      alert("Please fill all required fields");
+    if (!customerData.accountNo || !formData.complaintSubTypeId || !formData.departmentId || !formData.complaintTypeId || !formData.priority || !formData.mobileNumber || !formData.email) {
+      alert("Please fill all required fields with * before submitting.");
       return;
     }
-
+    setSubmitting(true);
     try {
-      const ticketData = {
-        ...formData,
-        customer: customerData,
+      const payload = {
+        consumerNumber: customerData.accountNo,
+        complaintTypeId: formData.complaintTypeId,
+        complaintSubTypeId: formData.complaintSubTypeId,
+        source: formData.source,
+        priority: formData.priority,
+        email: formData.email,
+        assignToStaffId: formData.assignToStaffId,
+        assignToEmail: formData.assignToEmail,
+        departmentId: formData.departmentId,
+        mobileNumber: formData.mobileNumber,
+        correctMeterReading: formData.correctMeterReading,
+        remark: formData.remark,
+        file: formData.file,
+        mediaLink: formData.mediaLink,
       };
 
-      console.log("Ticket Data:", ticketData);
+      const response = await axiosClient.post(`complaint`, payload);
+debugger;
+      alert(response.data.data);
 
-      const response = await axios.post(`${BASE_URL}/tickets`, ticketData);
-      alert("Ticket created successfully");
       resetSearch();
     } catch (error) {
       console.error("Error creating ticket:", error);
       alert("Error creating ticket");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -247,7 +365,6 @@ export default function NewComplaint() {
       </div>
     );
   }
-
   if (!customerData) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
@@ -303,10 +420,17 @@ export default function NewComplaint() {
                 <div>
                   <Label htmlFor="type">Complaint Type *</Label>
                   <Select
-                    value={formData.complaintType}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, complaintType: v })
-                    }
+                    value={formData.complaintTypeId}
+                    onValueChange={(v) => {
+                      const selected = complaintTypes.find((t) => t.id === v);
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        complaintTypeId: v,
+                        departmentId: selected?.departmentId || "",
+                        complaintSubTypeId: "",
+                      }));
+                    }}
                   >
                     <SelectTrigger id="type">
                       <SelectValue placeholder="Select type" />
@@ -321,14 +445,16 @@ export default function NewComplaint() {
                   </Select>
                 </div>
 
+                {/* FIX: Subtype Selection */}
                 <div>
-                  <Label htmlFor="subtype">Complaint Subtype</Label>
+                  <Label htmlFor="subtype">Complaint Subtype *</Label>
                   <Select
-                    value={formData.complaintSubtype}
+                    value={formData.complaintSubTypeId}
                     onValueChange={(v) =>
-                      setFormData({ ...formData, complaintSubtype: v })
+                      setFormData({ ...formData, complaintSubTypeId: v })
                     }
-                    disabled={!formData.complaintType}
+                    disabled={!formData.complaintTypeId}
+                    required
                   >
                     <SelectTrigger id="subtype">
                       <SelectValue placeholder="Select subtype" />
@@ -356,7 +482,7 @@ export default function NewComplaint() {
                     </SelectTrigger>
                     <SelectContent>
                       {priorities.map((priority) => (
-                        <SelectItem key={priority.id} value={priority.id}>
+                        <SelectItem key={priority.id} value={priority.name}>
                           {priority.name}
                         </SelectItem>
                       ))}
@@ -365,18 +491,18 @@ export default function NewComplaint() {
                 </div>
 
                 <div>
-                  <Label htmlFor="sources">Source *</Label>
+                  <Label htmlFor="source">Source *</Label>
                   <Select
-                    value={formData.sources}
+                    value={formData.source}
                     onValueChange={(v) =>
-                      setFormData({ ...formData, sources: v })
+                      setFormData({ ...formData, source: v })
                     }
                   >
                     <SelectTrigger id="source">
                       <SelectValue placeholder="Select Source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {sources.map((source) => (
+                      {source.map((source) => (
                         <SelectItem key={source.id} value={source.id}>
                           {source.name}
                         </SelectItem>
@@ -388,55 +514,88 @@ export default function NewComplaint() {
                 <div>
                   <Label htmlFor="assigned">Assigned To</Label>
                   <Select
-                    value={formData.assignedTo}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, assignedTo: v })
-                    }
+                    value={formData.assignToStaffId}
+                    disabled={!employees.length}
+                    onValueChange={(staffId) => {
+                      const emp = employees.find((e) => e.staffId === staffId);
+                      if (!emp) return;
+
+                      setFormData({
+                        ...formData,
+                        assignToStaffId: emp.staffId,
+                        assignToEmail: emp.email,
+                      });
+                    }}
                   >
                     <SelectTrigger id="assigned">
                       <SelectValue placeholder="Select staff" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      <SelectItem value="tech1">Tech Team 1</SelectItem>
-                      <SelectItem value="tech2">Tech Team 2</SelectItem>
-                      <SelectItem value="billing">Billing Team</SelectItem>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.staffId} value={emp.staffId}>
+                          {emp.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div>
-                  <Label htmlFor="contact">Contact Method</Label>
-                  <Select
-                    value={formData.contactMethod}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, contactMethod: v })
-                    }
-                  >
-                    <SelectTrigger id="contact">
-                      <SelectValue placeholder="Select method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="phone">Phone</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="sms">SMS</SelectItem>
-                      <SelectItem value="walk-in">Walk-in</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe the complaint in detail..."
-                    value={formData.description}
+                  <Label>Email *</Label>
+                  <Input
+                    value={formData.email}
                     onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
+                      setFormData({ ...formData, email: e.target.value })
                     }
-                    rows={4}
                     required
                   />
                 </div>
+
+                <div>
+                  <Label>Mobile Number *</Label>
+                  <Input
+                    value={formData.mobileNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mobileNumber: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>Correct Meter Reading</Label>
+                  <Input
+                    type="number"
+                    value={formData.correctMeterReading}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        correctMeterReading: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+
+                <Textarea
+                  placeholder="Remark"
+                  value={formData.remark}
+                  onChange={(e) =>
+                    setFormData({ ...formData, remark: e.target.value })
+                  }
+                />
+
+                {/* FIX: File input with ref and updated handler */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAttachmentUpload}
+                  className="block w-full text-sm text-slate-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-violet-50 file:text-violet-700
+                    hover:file:bg-violet-100"
+                />
               </CardContent>
             </Card>
           </div>
@@ -651,10 +810,17 @@ export default function NewComplaint() {
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={resetSearch}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={resetSearch}
+            disabled={submitting}
+          >
             Cancel
           </Button>
-          <Button type="submit">Generate Ticket</Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Creating..." : "Generate Ticket"}
+          </Button>
         </div>
       </form>
     </div>
