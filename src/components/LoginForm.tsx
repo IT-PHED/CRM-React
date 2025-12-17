@@ -49,11 +49,11 @@ export default function Login() {
 
     try {
       const result = await login(formData.username, formData.password);
-
+console.log(result);
       // check for success and verified status
       if (result.success === true && result.data?.data?.isVerified){
-        const serverUser = result.data?.userProfile || null;
-        auth.login(result.data?.token, serverUser);
+        const serverUser = result.data?.data?.userProfile || null;
+        auth.login(result.data?.data?.token, serverUser);
         if (remember) {
           localStorage.setItem("rememberedUser", formData.username);
         } else {
@@ -63,7 +63,7 @@ export default function Login() {
       } else if (result.success === true && !result.data?.data?.isVerified) {
         navigate("/otp-verification", { state: { saveUser: remember, userProfile: result.data?.data?.userProfile} });
       } else {
-        setError("Invalid username or password.");
+        setError(result.message || "Invalid username or password");
       }
     } catch (err: any) {
       setError(err?.message || "Invalid username or password");

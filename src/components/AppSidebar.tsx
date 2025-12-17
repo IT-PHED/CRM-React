@@ -161,11 +161,11 @@ export function AppSidebar() {
         <div className="p-4 border-b border-border flex items-center gap-3">
           {(() => {
             const displayName =
-              user?.StaffName || user?.name || user?.Staff || "Guest User";
+              user?.userFName || "Guest User";
             // const email = user?.Email || user?.email || "no-email@local";
             const staffId =
-              user?.StaffId || user?.StaffID || user?.StaffId || "";
-            const role = user?.Role || user?.role || "";
+              user?.userName || "";
+            const role = user?.area_Type || "";
             return (
               <>
                 <div>
@@ -184,7 +184,7 @@ export function AppSidebar() {
                     {displayName}
                   </span>
                   <span className="font-semibold text-primary-foreground">
-                      {/* {user.StaffId} | User */}
+                    {user.userName}
                   </span>
                 </div>
               </>

@@ -1,30 +1,33 @@
 import axios from "axios";
 
-const BASE_URL =
-  import.meta.env.VITE_BASE_URL;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 15000, // avoid hanging requests
+  timeout: 15000,
 });
 
-// Optional: request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    // Add tokens if needed later
+    const token = localStorage.getItem("token"); // or your storage key
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Optional: response interceptor
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Normalize error messages
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login"; // adjust route
+    }
     return Promise.reject(error.response || error.message);
   }
 );
