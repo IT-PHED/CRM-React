@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, ArrowLeft } from "lucide-react";
 import { uploadFile } from "../services/fileUploadService";
 import { useAuth } from "@/contexts/AuthContext";
+import { showSuccess, showError, showConfirm } from "@/utils/alert";
 
 export default function NewComplaint() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -90,10 +91,10 @@ export default function NewComplaint() {
         mediaLink: result.fileUrl,
       }));
 
-      alert('Upload Added Successfully');
+      showSuccess("Upload Added Successfully");
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload file");
+      showError("Failed to upload file");
 
       // Clear the input field
       if (fileInputRef.current) {
@@ -206,13 +207,13 @@ export default function NewComplaint() {
           setCustomerData(null);
         }
       } else {
-        alert("No customer records found");
+        showError("No customer records found");
         setSearchResults([]);
         setCustomerData(null);
       }
     } catch (error) {
       console.error("Search error:", error);
-      alert("Error searching customer");
+      showError("Error searching customer");
     } finally {
       setLoading(false);
     }
@@ -268,7 +269,7 @@ export default function NewComplaint() {
     e.preventDefault();
 
     if (!customerData.accountNo || !formData.complaintSubTypeId || !formData.departmentId || !formData.complaintTypeId || !formData.priority || !formData.mobileNumber || !formData.email) {
-      alert("Please fill all required fields with * before submitting.");
+      showError("Please fill all required fields");
       return;
     }
     setSubmitting(true);
@@ -291,13 +292,15 @@ export default function NewComplaint() {
       };
 
       const response = await axiosClient.post(`complaint`, payload);
-debugger;
-      alert(response.data.data);
+
+      debugger;
+      
+      showSuccess(response.data.data);
 
       resetSearch();
     } catch (error) {
       console.error("Error creating ticket:", error);
-      alert("Error creating ticket");
+      showError("Error creating ticket");
     } finally {
       setSubmitting(false);
     }
