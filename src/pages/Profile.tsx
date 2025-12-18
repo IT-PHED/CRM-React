@@ -1,115 +1,120 @@
-import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { updateProfile } from "@/services/authService";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
-export default function Profile() {
-  const { user, updateUser } = useAuth();
-  const [form, setForm] = useState({
-    StaffName: user?.StaffName || user?.name || "",
-    Email: user?.Email || user?.email || "",
-    PhoneNo: user?.PhoneNo || user?.phone || "",
-    StaffId: user?.StaffId || user?.StaffID || "",
-    Role: user?.Role || user?.role || "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+export default function ProfileOverview() {
+  const { user } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const result = await updateProfile(form);
-      // try to pick updated user from result
-      const updated = result?.User || result?.user || result || form;
-      updateUser(updated);
-      setSuccess("Profile updated");
-    } catch (err: any) {
-      setError(err?.message || "Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!user) return null;
 
   return (
-    <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-4">My Profile</h1>
-      <div className="bg-background p-6 rounded-md shadow-sm">
-        <div className="flex items-center gap-4 mb-4">
-          <Avatar className="h-16 w-16">
-            {user?.Photo || user?.avatar || user?.picture ? (
-              <AvatarImage src={user?.Photo || user?.avatar || user?.picture} />
+    <div className="max-w-5xl p-6 space-y-6">
+      {/* HEADER */}
+      <Card>
+        <CardContent className="flex items-center gap-6 py-6">
+          <Avatar className="h-20 w-20">
+            {user.Photo || user.avatar || user.picture ? (
+              <AvatarImage src={user.Photo || user.avatar || user.picture} />
             ) : (
-              <AvatarFallback>
-                {(user?.StaffName || user?.name || "User")[0]}
+              <AvatarFallback className="text-xl">
+                {user.userFName?.[0]}
               </AvatarFallback>
             )}
           </Avatar>
-          <div>
-            <div className="text-lg font-semibold">
-              {user?.StaffName || user?.name || "Guest User"}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              {user?.Email || user?.email}
+
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold">{user.userFName}</h2>
+            <p className="text-muted-foreground">{user.emailId}</p>
+
+            <div className="mt-2 flex gap-2">
+              <Badge variant="secondary">{user.area_Type}</Badge>
+              <Badge variant={user.isVerified ? "default" : "destructive"}>
+                {user.isVerified ? "Verified" : "Unverified"}
+              </Badge>
+              <Badge variant="outline">
+                Status: {user.status === "A" ? "Active" : "Inactive"}
+              </Badge>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label className="block">
-            <div className="text-xs text-muted-foreground mb-1">Full name</div>
-            <Input
-              name="StaffName"
-              value={form.StaffName}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="block">
-            <div className="text-xs text-muted-foreground mb-1">Email</div>
-            <Input name="Email" value={form.Email} onChange={handleChange} />
-          </label>
-          <label className="block">
-            <div className="text-xs text-muted-foreground mb-1">Phone</div>
-            <Input
-              name="PhoneNo"
-              value={form.PhoneNo}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="block">
-            <div className="text-xs text-muted-foreground mb-1">Staff ID</div>
-            <Input
-              name="StaffId"
-              value={form.StaffId}
-              onChange={handleChange}
-            />
-          </label>
-          <label className="block md:col-span-2">
-            <div className="text-xs text-muted-foreground mb-1">Role</div>
-            <Input name="Role" value={form.Role} onChange={handleChange} />
-          </label>
-        </div>
+      {/* DETAILS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* PERSONAL INFO */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ReadonlyField label="Full Name" value={user.userFName} />
+            <ReadonlyField label="Staff ID" value={user.userName} />
+            <ReadonlyField label="Phone Number" value={user.phoneNo} />
+            <ReadonlyField label="Email" value={user.emailId} />
+          </CardContent>
+        </Card>
 
-        <div className="mt-4 flex items-center gap-3">
-          <Button onClick={handleSave} disabled={loading}>
-            {loading ? "Saving..." : "Save changes"}
-          </Button>
-          {error ? (
-            <span className="text-sm text-destructive">{error}</span>
-          ) : null}
-          {success ? (
-            <span className="text-sm text-success">{success}</span>
-          ) : null}
-        </div>
+        {/* ORGANIZATION */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ReadonlyField label="Department" value={user.departmentName} />
+            <ReadonlyField label="Department ID" value={user.departmentId} />
+            <ReadonlyField label="Group ID" value={String(user.groupId)} />
+            <ReadonlyField label="Region ID" value={user.region_Id} />
+          </CardContent>
+        </Card>
+
+        {/* SECURITY */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ReadonlyField label="Role ID" value={String(user.smf_role_id)} />
+            <ReadonlyField
+              label="OTP Last Verified"
+              value={user.otpLastVerifiedTime}
+            />
+            <ReadonlyField
+              label="Last IP Address"
+              value={user.lastIpAddress || "N/A"}
+            />
+          </CardContent>
+        </Card>
+
+        {/* ACTIVITY */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Activity</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ReadonlyField label="Account Created" value={user.createdDate} />
+            <ReadonlyField label="Last Login" value={user.lstLoginDate} />
+            <ReadonlyField
+              label="Password Updated"
+              value={user.lstPswdUpdatedDate || "N/A"}
+            />
+          </CardContent>
+        </Card>
       </div>
+    </div>
+  );
+}
+
+/* ------------------ */
+/* Read-only Field */
+/* ------------------ */
+function ReadonlyField({ label, value }: { label: string; value?: string }) {
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+      <Input value={value || ""} disabled />
     </div>
   );
 }
