@@ -57,17 +57,21 @@ const menuItems = [
         title: "Pending",
         url: "/complaints/pending",
       },
+      // {
+      //   title: "Resolved",
+      //   url: "/complaints/resolved",
+      // },
+      // {
+      //   title: "Closed",
+      //   url: "/complaints/closed",
+      // },
       {
-        title: "Resolved",
-        url: "/complaints/resolved",
-      },
-      {
-        title: "Escalated",
-        url: "/complaints/escalated",
-      },
-      {
-        title: "All Complaints",
+        title: "All Complaints - HQ",
         url: "/complaints/all",
+      },
+      {
+        title: "All Complaints - Region",
+        url: "/complaints/department",
       },
     ],
   },

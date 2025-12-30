@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axiosClient from "@/services/axiosClient";
+import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
   getCoreRowModel,
@@ -30,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, ArrowUpDown, Eye, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Complaint = {
   id: string;
@@ -63,9 +64,8 @@ const priorityColors: Record<string, string> = {
 
 const PAGE_SIZE = 50;
 
-export default function Complaints() {
-    const navigate = useNavigate();
-    
+export default function RegionalComplaint() {
+  const navigate = useNavigate();
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -75,16 +75,25 @@ export default function Complaints() {
   const [pageNumber, setPageNumber] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+    const { user } = useAuth();
+
+      if (!user) return null;
+
   const fetchComplaints = async (page: number, search?: string) => {
     setLoading(true);
     try {
-      const { data } = await axiosClient.get("/complaint", {
-        params: {
-          pageNumber: page,
-          PageSize: PAGE_SIZE,
-          ...(search && { searchTerm: search }),
-        },
-      });
+      const { data } = await axiosClient.get(
+       // "/complaint/department/" + user.departmentId,
+       `/complaint/department/${user.departmentId}/status`,
+        {
+          params: {
+            pageNumber: page,
+            status: "New",
+            PageSize: PAGE_SIZE,
+            ...(search && { searchTerm: search }),
+          },
+        }
+      );
       setComplaints(data.data.data);
       setHasMore(data.data.data.length === PAGE_SIZE);
     } catch (error) {
@@ -210,11 +219,10 @@ export default function Complaints() {
 
   return (
     <div className="space-y-6">
- 
 
       <Card>
         <CardHeader>
-          <CardTitle>All Complaints</CardTitle>
+          <CardTitle>Department Related Complaints</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
