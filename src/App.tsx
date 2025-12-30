@@ -12,6 +12,8 @@ import Profile from "./pages/Profile";
 import Complaints from "./pages/Complaints";
 import NotFound from "./pages/NotFound";
 import NewComplaint from "./pages/NewComplaint";
+import RegionalComplaint from "./pages/RegionalComplaint";
+import ComplaintDetails from "./pages/ComplaintDetails";
 
 import { DashboardLayout } from "./components/DashboardLayout";
 
@@ -27,10 +29,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/index" element={<Index />} />
-            <Route
-              path="/otp-verification"
-              element={<OtpForm />} 
-            />
+            <Route path="/otp-verification" element={<OtpForm />} />
             <Route
               path="/dashboard"
               element={
@@ -48,7 +47,31 @@ const App = () => (
               }
             />
             <Route
-              path="/complaints/*"
+              path="/complaints/all"
+              element={
+                <DashboardLayout>
+                  <Complaints />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/complaints/department"
+              element={
+                <DashboardLayout>
+                  <RegionalComplaint />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/complaints/:id"
+              element={
+                <DashboardLayout>
+                  <ComplaintDetails />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/complaints/pending"
               element={
                 <DashboardLayout>
                   <Complaints />
