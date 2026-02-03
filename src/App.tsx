@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import NewComplaint from "./pages/NewComplaint";
 import RegionalComplaint from "./pages/RegionalComplaint";
 import ComplaintDetails from "./pages/ComplaintDetails";
+import UserManagement from "./pages/UserManagement";
 
 import { DashboardLayout } from "./components/DashboardLayout";
 
@@ -113,6 +114,14 @@ const App = () => (
                   <div className="p-6">
                     <h1 className="text-3xl font-bold">KYC Reports</h1>
                   </div>
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="configuration/users"
+              element={
+                <DashboardLayout>
+                  <UserManagement />
                 </DashboardLayout>
               }
             />

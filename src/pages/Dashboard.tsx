@@ -1,65 +1,170 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { ClipboardList, MessageSquare, Phone } from "lucide-react";
-
-const ticketData = [
-  { date: "01-11-2025", billing: 120, delay: 80, disconnection: 40, interruption: 30, meter: 60, others: 20, voltage: 50 },
-  { date: "03-11-2025", billing: 140, delay: 90, disconnection: 50, interruption: 40, meter: 70, others: 25, voltage: 60 },
-  { date: "05-11-2025", billing: 160, delay: 100, disconnection: 60, interruption: 50, meter: 80, others: 30, voltage: 70 },
-  { date: "07-11-2025", billing: 180, delay: 110, disconnection: 70, interruption: 60, meter: 90, others: 35, voltage: 80 },
-  { date: "09-11-2025", billing: 200, delay: 120, disconnection: 80, interruption: 70, meter: 100, others: 40, voltage: 90 },
-  { date: "11-11-2025", billing: 170, delay: 105, disconnection: 65, interruption: 55, meter: 85, others: 32, voltage: 75 },
-  { date: "13-11-2025", billing: 190, delay: 115, disconnection: 75, interruption: 65, meter: 95, others: 38, voltage: 85 },
-  { date: "15-11-2025", billing: 210, delay: 125, disconnection: 85, interruption: 75, meter: 105, others: 42, voltage: 95 },
-  { date: "17-11-2025", billing: 220, delay: 130, disconnection: 90, interruption: 80, meter: 110, others: 45, voltage: 100 },
-  { date: "19-11-2025", billing: 200, delay: 120, disconnection: 80, interruption: 70, meter: 100, others: 40, voltage: 90 },
-  { date: "21-11-2025", billing: 180, delay: 110, disconnection: 70, interruption: 60, meter: 90, others: 35, voltage: 80 },
-];
-
-const categoryData = [
-  { name: "Billing", value: 2340, color: "#60a5fa" },
-  { name: "Delay in Connection", value: 1560, color: "#f87171" },
-  { name: "Disconnection", value: 890, color: "#86efac" },
-  { name: "Interruption", value: 670, color: "#fbbf24" },
-  { name: "Meter", value: 1120, color: "#a78bfa" },
-  { name: "Others", value: 450, color: "#fb923c" },
-  { name: "Voltage", value: 1050, color: "#38bdf8" },
-];
-
-const divisionData = [
-  { division: "Calabar Urban", count: 450 },
-  { division: "Calabar Rural", count: 320 },
-  { division: "Ikom", count: 280 },
-  { division: "Ugep", count: 380 },
-  { division: "PH Urban", count: 520 },
-  { division: "PH GRA", count: 410 },
-  { division: "PH Industrial", count: 350 },
-  { division: "PH Commercial", count: 480 },
-  { division: "Uyo", count: 390 },
-];
+import {
+  getCategoryWise,
+  getDateWise,
+  getLocationWise,
+  getSlaCount,
+  getSlaDivCount,
+  getSlaDuration,
+  getTicketSummary,
+} from "@/services/dashboardServices";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
+  const [data, setData] = useState({
+    category: [],
+    division: [],
+    date: [],
+    ticket: null,
+    location: [],
+    slaCount: [],
+    slaDuration: [],
+  });
+
+  // color palette used for pie/chart consistency
+  const colors = [
+    "#60a5fa",
+    "#f87171",
+    "#86efac",
+    "#fbbf24",
+    "#a78bfa",
+    "#fb923c",
+    "#38bdf8",
+  ];
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        const [
+          category,
+          division,
+          date,
+          ticket,
+          location,
+          slaCount,
+          slaDuration,
+        ] = await Promise.all([
+          getCategoryWise(),
+          getSlaDivCount(),
+          getDateWise(),
+          getTicketSummary(),
+          getLocationWise(),
+          getSlaCount(),
+          getSlaDuration(),
+        ]);
+
+        setData({
+          category: category || [],
+          division: division || [],
+          date: date || [],
+          ticket: ticket ?? null,
+          location: location || [],
+          slaCount: slaCount || [],
+          slaDuration: slaDuration || [],
+        });
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  // Map API responses to chart-friendly shapes with safe fallbacks
+  const categoryData =
+    data.category && data.category.length > 0
+      ? data.category.map((c: any, i: number) => ({
+          name: c.name ?? c.category ?? c.label ?? `Item ${i + 1}`,
+          value: c.count ?? c.value ?? c.total ?? 0,
+          color: c.color ?? colors[i % colors.length],
+        }))
+      : [];
+
+  const ticketData = data.date && data.date.length > 0 ? data.date : [];
+
+  const divisionData =
+    data.division && data.division.length > 0 ? data.division : [];
+
+  const slaData =
+    data.slaCount && data.slaCount.length > 0 ? data.slaCount : [];
+
+  // Safely read ticket summary numbers (defensive against varying API shapes)
+  const getNumber = (obj: any, keys: string[]) => {
+    for (const k of keys) {
+      if (obj && typeof obj[k] === "number") return obj[k];
+    }
+    return "-";
+  };
+
+  const todayTotal = getNumber(data.ticket, [
+    "todayTotal",
+    "today_total",
+    "today?.total",
+    "today?.totalCount",
+  ]);
+  const todayOpen = getNumber(data.ticket, [
+    "todayOpen",
+    "today_open",
+    "today?.open",
+  ]);
+  const todayClosed = getNumber(data.ticket, [
+    "todayClosed",
+    "today_closed",
+    "today?.closed",
+  ]);
+  const monthlyTotal = getNumber(data.ticket, [
+    "monthlyTotal",
+    "monthly_total",
+    "monthly?.total",
+  ]);
+  const monthlyOpen = getNumber(data.ticket, [
+    "monthlyOpen",
+    "monthly_open",
+    "monthly?.open",
+  ]);
+  const monthlyClosed = getNumber(data.ticket, [
+    "monthlyClosed",
+    "monthly_closed",
+    "monthly?.closed",
+  ]);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="bg-blue-500/90 text-white border-0">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium">Ticket Summary</CardTitle>
+            <CardTitle className="text-base font-medium">
+              Ticket Summary
+            </CardTitle>
             <ClipboardList className="h-5 w-5" />
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-xs opacity-90 mb-1">Today</div>
-                <div className="font-semibold">Total: 181</div>
-                <div className="font-semibold">Open: 0</div>
-                <div className="font-semibold">Closed: 181</div>
+                <div className="font-semibold">Total: {todayTotal}</div>
+                <div className="font-semibold">Open: {todayOpen}</div>
+                <div className="font-semibold">Closed: {todayClosed}</div>
               </div>
               <div>
                 <div className="text-xs opacity-90 mb-1">Monthly</div>
-                <div className="font-semibold">Total: 9288</div>
-                <div className="font-semibold">Open: 3532</div>
-                <div className="font-semibold">Closed: 5756</div>
+                <div className="font-semibold">Total: {monthlyTotal}</div>
+                <div className="font-semibold">Open: {monthlyOpen}</div>
+                <div className="font-semibold">Closed: {monthlyClosed}</div>
               </div>
             </div>
           </CardContent>
@@ -67,18 +172,31 @@ export default function Dashboard() {
 
         <Card className="bg-lime-500/90 text-white border-0">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium">Escalation Status</CardTitle>
+            <CardTitle className="text-base font-medium">
+              Escalation Status
+            </CardTitle>
             <MessageSquare className="h-5 w-5" />
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-xs opacity-90 mb-1">Today</div>
-                <div className="text-3xl font-bold">0</div>
+                <div className="text-3xl font-bold">
+                  {data.slaCount && data.slaCount.length
+                    ? data.slaCount[0].escalated ?? 0
+                    : 0}
+                </div>
               </div>
               <div>
                 <div className="text-xs opacity-90 mb-1">Monthly</div>
-                <div className="text-3xl font-bold">294147</div>
+                <div className="text-3xl font-bold">
+                  {data.slaCount && data.slaCount.length
+                    ? data.slaCount.reduce(
+                        (s: any, x: any) => s + (x.escalated ?? 0),
+                        0
+                      )
+                    : 0}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -86,7 +204,9 @@ export default function Dashboard() {
 
         <Card className="bg-cyan-500/90 text-white border-0">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium">Call Summary[in hrs]</CardTitle>
+            <CardTitle className="text-base font-medium">
+              Call Summary[in hrs]
+            </CardTitle>
             <Phone className="h-5 w-5" />
           </CardHeader>
           <CardContent>
@@ -110,31 +230,42 @@ export default function Dashboard() {
             <CardTitle className="text-base">Category Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  dataKey="value"
-                  label={(entry) => entry.name}
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+            {categoryData.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No category data available
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      dataKey="value"
+                      label={(entry) => entry.name}
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-3 mt-4 justify-center text-xs">
+                  {categoryData.map((item) => (
+                    <div key={item.name} className="flex items-center gap-1">
+                      <div
+                        className="w-3 h-3 rounded-sm"
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <span className="text-muted-foreground">{item.name}</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-3 mt-4 justify-center text-xs">
-              {categoryData.map((item) => (
-                <div key={item.name} className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-muted-foreground">{item.name}</span>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -143,22 +274,69 @@ export default function Dashboard() {
             <CardTitle className="text-base">Day Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ticketData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey="billing" stackId="a" fill="#60a5fa" name="Billing" />
-                <Bar dataKey="delay" stackId="a" fill="#f87171" name="Delay in Connection" />
-                <Bar dataKey="disconnection" stackId="a" fill="#86efac" name="Disconnection" />
-                <Bar dataKey="interruption" stackId="a" fill="#fbbf24" name="Interruption" />
-                <Bar dataKey="meter" stackId="a" fill="#a78bfa" name="Meter" />
-                <Bar dataKey="others" stackId="a" fill="#fb923c" name="Others" />
-                <Bar dataKey="voltage" stackId="a" fill="#38bdf8" name="Voltage" />
-              </BarChart>
-            </ResponsiveContainer>
+            {ticketData.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No day-wise ticket data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={ticketData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Bar
+                    dataKey="billing"
+                    stackId="a"
+                    fill="#60a5fa"
+                    name="Billing"
+                  />
+                  <Bar
+                    dataKey="delay"
+                    stackId="a"
+                    fill="#f87171"
+                    name="Delay in Connection"
+                  />
+                  <Bar
+                    dataKey="disconnection"
+                    stackId="a"
+                    fill="#86efac"
+                    name="Disconnection"
+                  />
+                  <Bar
+                    dataKey="interruption"
+                    stackId="a"
+                    fill="#fbbf24"
+                    name="Interruption"
+                  />
+                  <Bar
+                    dataKey="meter"
+                    stackId="a"
+                    fill="#a78bfa"
+                    name="Meter"
+                  />
+                  <Bar
+                    dataKey="others"
+                    stackId="a"
+                    fill="#fb923c"
+                    name="Others"
+                  />
+                  <Bar
+                    dataKey="voltage"
+                    stackId="a"
+                    fill="#38bdf8"
+                    name="Voltage"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -169,32 +347,58 @@ export default function Dashboard() {
             <CardTitle className="text-base">Division Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={divisionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="division" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#60a5fa" />
-              </BarChart>
-            </ResponsiveContainer>
+            {divisionData.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No division data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={divisionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="division"
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#60a5fa" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Escalation & SLA Summary</CardTitle>
+            <CardTitle className="text-base">
+              Escalation & SLA Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={divisionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="division" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="count" fill="#38bdf8" />
-              </BarChart>
-            </ResponsiveContainer>
+            {slaData.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                No SLA data available
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={slaData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="division"
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#38bdf8" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
