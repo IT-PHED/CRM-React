@@ -42,8 +42,7 @@ export default function NewComplaint() {
   const [source, setsource] = useState<any[]>([]);
   const [complaintTypes, setComplaintTypes] = useState<any[]>([]);
   const [filteredSubtypes, setFilteredSubtypes] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+
   const { user } = useAuth();
 
   // Ref for the file input to clear it programmatically
@@ -56,8 +55,6 @@ export default function NewComplaint() {
     priority: "",
     email: "",
     mobileNumber: "",
-    assignToStaffId: "",
-    assignToEmail: "",
     departmentId: "",
     correctMeterReading: 0,
     remark: "",
@@ -129,44 +126,6 @@ export default function NewComplaint() {
 
     fetchDropdownData();
   }, []);
-
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      if (!formData.complaintTypeId || !customerData?.accountNo) {
-        setEmployees([]);
-        return;
-      }
-
-      const selectedType = complaintTypes.find(
-        (t) => t.id === formData.complaintTypeId
-      );
-
-      if (!selectedType?.departmentId) return;
-
-      setLoadingEmployees(true);
-
-      try {
-        const res = await axiosClient.get(
-          `employees/regional-department-member`,
-          {
-            params: {
-              DepartmentId: selectedType.departmentId,
-              AccountNumber: customerData.accountNo,
-            },
-          }
-        );
-
-        setEmployees(res.data.data || []);
-      } catch (err) {
-        console.error("Employee fetch failed", err);
-        setEmployees([]);
-      } finally {
-        setLoadingEmployees(false);
-      }
-    };
-
-    fetchEmployees();
-  }, [formData.complaintTypeId, customerData]);
 
   // FIX: Subtype Logic
   useEffect(() => {
@@ -253,8 +212,6 @@ export default function NewComplaint() {
       priority: "",
       email: "",
       mobileNumber: "",
-      assignToStaffId: "",
-      assignToEmail: "",
       departmentId: "",
       correctMeterReading: 0,
       remark: "",
@@ -268,7 +225,15 @@ export default function NewComplaint() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customerData.accountNo || !formData.complaintSubTypeId || !formData.departmentId || !formData.complaintTypeId || !formData.priority || !formData.mobileNumber || !formData.email) {
+    if (
+      !customerData.accountNo ||
+      !formData.complaintSubTypeId ||
+      !formData.departmentId ||
+      !formData.complaintTypeId ||
+      !formData.priority ||
+      !formData.mobileNumber ||
+      !formData.email
+    ) {
       showError("Please fill all required fields");
       return;
     }
@@ -281,8 +246,6 @@ export default function NewComplaint() {
         source: formData.source,
         priority: formData.priority,
         email: formData.email,
-        assignToStaffId: formData.assignToStaffId,
-        assignToEmail: formData.assignToEmail,
         departmentId: formData.departmentId,
         mobileNumber: formData.mobileNumber,
         correctMeterReading: formData.correctMeterReading,
@@ -294,7 +257,7 @@ export default function NewComplaint() {
       const response = await axiosClient.post(`complaint`, payload);
 
       debugger;
-      
+
       showSuccess(response.data.data);
 
       resetSearch();
@@ -514,35 +477,6 @@ export default function NewComplaint() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="assigned">Assigned To</Label>
-                  <Select
-                    value={formData.assignToStaffId}
-                    disabled={!employees.length}
-                    onValueChange={(staffId) => {
-                      const emp = employees.find((e) => e.staffId === staffId);
-                      if (!emp) return;
-
-                      setFormData({
-                        ...formData,
-                        assignToStaffId: emp.staffId,
-                        assignToEmail: emp.email,
-                      });
-                    }}
-                  >
-                    <SelectTrigger id="assigned">
-                      <SelectValue placeholder="Select staff" />
-                    </SelectTrigger>
-
-                    <SelectContent>
-                      {employees.map((emp) => (
-                        <SelectItem key={emp.staffId} value={emp.staffId}>
-                          {emp.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div>
                   <Label>Email *</Label>
                   <Input
