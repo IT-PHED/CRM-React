@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axiosClient from "@/services/axiosClient";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -13,19 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { showSuccess, showError } from "@/utils/alert";
 
-import { ArrowLeft, Loader2, ZoomIn } from "lucide-react";
-import ComplaintChat from "../pages/ComplaintChat";
-import ResolveComplaint from "../components/ResolveComplaint";
 import { useAuth } from "@/contexts/AuthContext";
+import { GetComplaintInformation, useGetAllRegionalUsersTable, useReassignComplaint } from "@/hooks/useApiQuery";
+import { Loader2, ZoomIn } from "lucide-react";
+import ResolveComplaint from "../components/ResolveComplaint";
+import ComplaintChat from "../pages/ComplaintChat";
+import CloseComplaint from "@/components/closeComplaint";
 /* ================= TYPES ================= */
 
 type ComplaintDetails = {
@@ -56,48 +57,33 @@ type ComplaintDetails = {
 /* ================= COMPONENT ================= */
 
 export default function ComplaintDetails() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const { isLoading, complaintInfo } = GetComplaintInformation();
 
   const [complaint, setComplaint] = useState<ComplaintDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const customerServiceId = "64737384838778640014";
+  const isCustomerCareAgent = user?.departmentId == customerServiceId;
+
+  const complaintDetails = complaintInfo?.data;
+
+  const { allRegionalStaffs } = useGetAllRegionalUsersTable(user.departmentId, complaintDetails?.consumerNumber ?? "0");
+  const { reassignComplaint, isPending } = useReassignComplaint();
 
   // assignment state
   const [employees, setEmployees] = useState<any[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [assigning, setAssigning] = useState(false);
   const [assignedStaffId, setAssignedStaffId] = useState<string>("");
   const [assignedTo, setAssignedTo] = useState<{
     name?: string;
     email?: string;
   } | null>(null);
+  const [assignData, setAssignData] = useState({
+    assignToStaffId: "",
+    assignToEmail: "",
+    assignTo: ""
+  });
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      if (!complaint) return;
-      setLoadingEmployees(true);
-      try {
-        const res = await axiosClient.get(
-          `employees/regional-department-member`,
-          {
-            params: {
-              AccountNumber: complaint.consumerId,
-              DepartmentId: user.departmentId,
-            },
-          }
-        );
-        setEmployees(res.data.data || []);
-      } catch (err) {
-        console.error("Employee fetch failed", err);
-        setEmployees([]);
-      } finally {
-        setLoadingEmployees(false);
-      }
-    };
-
-    fetchEmployees();
-  }, [complaint, user.departmentId]);
 
   // resolve assigned staff's display name/email when employees or assignedStaffId change
   useEffect(() => {
@@ -108,85 +94,18 @@ export default function ComplaintDetails() {
     }
   }, [employees, assignedStaffId]);
 
-  const handleAssign = async (staffId: string) => {
-    const emp = employees.find((e) => e.staffId === staffId);
-    if (!emp || !complaint) return;
-    setAssigning(true);
-    try {
-      const res = await axiosClient.patch(`/complaint/reassign`, {
-        ticketId: complaint.ticket,
-        consumerId: complaint.consumerId,
-        assignStaffId: emp.staffId,
-        assignEmail: emp.email,
-      });
+  const handleAssign = async () => {
+    const payload = {
+      ticketId: complaintDetails.ticket,
+      consumerId: complaintDetails?.consumerId,
+      assignStaffId: assignData.assignToStaffId,
+      assignEmail: assignData.assignToEmail,
+    };
 
-      const resData = res?.data || {};
-      const message = resData.message || "Assigned successfully";
-      const detail = resData.data ? `\n${resData.data}` : "";
-
-      setAssignedTo({ name: emp.name, email: emp.email });
-      setAssignedStaffId(emp.staffId);
-
-      // Show combined message + data from response
-      showSuccess(`${message}${detail}`);
-    } catch (err: any) {
-      console.error("Assign failed", err);
-      const remoteMsg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to assign staff";
-      const remoteDetail = err?.response?.data?.data
-        ? `\n${err.response.data.data}`
-        : "";
-      showError(`${remoteMsg}${remoteDetail}`);
-    } finally {
-      setAssigning(false);
-    }
+    reassignComplaint(payload);
   };
 
   /* ================= FETCH DATA ================= */
-
-  useEffect(() => {
-    const fetchComplaint = async () => {
-      const { data } = await axiosClient.get(`/complaint/ticket/${id}`);
-      const d = data.data;
-
-      setComplaint({
-        id: d.id,
-        ticket: d.ticket,
-        status: d.status,
-        isResolved: d.isResolved,
-        complaintType: d.complaintType,
-        complaintSubType: d.complaintSubType,
-        remark: d.remark,
-        dateGenerated: d.dateGenerated,
-        dateResolved: d.dateResolved,
-        consumerId: d.consumerId,
-        consumerName: d.consumerName,
-        consumerAddress: `${d.address1} ${d.address2 || ""} ${
-          d.address3 || ""
-        }`.trim(),
-        consumerCategory: d.consumerCategory,
-        consumerPhoneNumber: d.mobileNo,
-        meterNo: d.meterNo,
-        routeNumber: d.routeNumber,
-        mediaURL: d.mediaURL,
-        email: d.email,
-        maxDemand: d.maxDemand,
-        ibc: d.ibc,
-        bsc: d.bsc,
-        assignedTo: d.assignedTo ?? null,
-      });
-
-      // initialize assigned staff id from fetched complaint
-      setAssignedStaffId(d.assignedTo ?? "");
-      setAssignedTo(null);
-
-      setLoading(false);
-    };
-
-    fetchComplaint();
-  }, [id]);
   const handleResolved = () => {
     setComplaint((prev) => {
       if (!prev) return prev;
@@ -199,14 +118,14 @@ export default function ComplaintDetails() {
     });
   };
 
-  if (loading)
+  if (isLoading)
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="animate-spin h-6 w-6" />
       </div>
     );
 
-  if (!complaint) return null;
+  // if (!complaint) return null;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -222,16 +141,16 @@ export default function ComplaintDetails() {
         <CardHeader className="flex flex-col sm:flex-row justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="text-xl md:text-2xl">
-              Ticket #{complaint.ticket}
+              Ticket #{complaintDetails?.ticket}
             </CardTitle>
             <CardTitle className="text-md text-muted-foreground">
-              {complaint.complaintType} → {complaint.complaintSubType}
+              {complaintDetails?.complaintType} → {complaintDetails?.complaintSubType}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              {new Date(complaint.dateGenerated).toLocaleString()}
+              {new Date(complaintDetails?.dateGenerated).toLocaleString()}
             </p>
           </div>
-          <Badge className="self-start">{complaint.status}</Badge>
+          <Badge className="self-start">{complaintDetails?.status}</Badge>
         </CardHeader>
       </Card>
 
@@ -245,52 +164,77 @@ export default function ComplaintDetails() {
             <CardContent className="space-y-3">
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <p className="text-sm font-medium">Name</p>
-                  <p className="text-sm text-muted-foreground">
-                    {complaint.consumerName}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consumer Name</p>
+                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerName}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consumer ID</p>
+                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerId}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</p>
+                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerCategory}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Phone</p>
+                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerPhoneNumber || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email</p>
+                  <p className="text-sm font-medium text-gray-900 truncate" title={complaintDetails?.email}>
+                    {complaintDetails?.email || 'N/A'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Category</p>
-                  <p className="text-sm text-muted-foreground">
-                    {complaint.consumerCategory}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Phone</p>
-                  <p className="text-sm text-muted-foreground">
-                    {complaint.consumerPhoneNumber}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-muted-foreground break-all">
-                    {complaint.email}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Date Generated</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {complaintDetails?.dateGenerated ? new Date(complaintDetails.dateGenerated).toLocaleDateString() : 'N/A'}
                   </p>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">Address</p>
-                <p className="text-sm text-muted-foreground">
-                  {complaint.consumerAddress}
+
+              <hr className="border-gray-100" />
+
+              {/* Complaint Details Section */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Complaint Type</p>
+                  <div className="mt-1">
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md">
+                      {complaintDetails?.complaintType}
+                    </span>
+                    <p className="text-sm text-gray-600 mt-1">{complaintDetails?.complaintSubType}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">BSC</p>
+                  <p className="text-sm text-gray-900 mt-1">{complaintDetails?.bsc}</p>
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Service Address</p>
+                <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                  {complaintDetails?.consumerAddress}
                 </p>
               </div>
-              {complaint.remark && (
+              {complaintDetails?.remark && (
                 <div className="pt-2 border-t">
                   <p className="text-sm font-medium">Remark</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {complaint.remark}
+                    {complaintDetails?.remark}
                   </p>
                 </div>
               )}
-              {complaint.mediaURL && (
+              {complaintDetails?.mediaURL && (
                 <div className="pt-2">
                   <p className="text-sm font-medium mb-2">Attachment</p>
                   <Dialog>
                     <DialogTrigger asChild>
                       <div className="relative w-32 h-32 cursor-pointer group">
                         <img
-                          src={complaint.mediaURL}
+                          src={complaintDetails?.mediaURL}
                           alt="Complaint attachment"
                           className="w-full h-full object-cover rounded-md border"
                         />
@@ -301,7 +245,7 @@ export default function ComplaintDetails() {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] p-0">
                       <img
-                        src={complaint.mediaURL}
+                        src={complaintDetails?.mediaURL}
                         alt="Complaint attachment"
                         className="w-full h-full object-contain"
                       />
@@ -319,37 +263,37 @@ export default function ComplaintDetails() {
                   <div>
                     <p className="text-sm font-medium">Meter Number</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.meterNo}
+                      {complaintDetails?.meterNo}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Max Demand</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.maxDemand}
+                      {complaintDetails?.maxDemand}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Route Number</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.routeNumber}
+                      {complaintDetails?.routeNumber}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">IBC</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.ibc}
+                      {complaintDetails?.ibc}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">BSC</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.bsc}
+                      {complaintDetails?.bsc}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Account No</p>
                     <p className="text-sm text-muted-foreground">
-                      {complaint.consumerId}
+                      {complaintDetails?.consumerId}
                     </p>
                   </div>
                 </div>
@@ -358,7 +302,7 @@ export default function ComplaintDetails() {
           </Accordion>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {complaint?.status.toLocaleLowerCase() === "new" && (
+            {complaintDetails?.status.toLocaleLowerCase() === "new" && (
               <Card>
                 <CardHeader>
                   <CardTitle>Assign Staff</CardTitle>
@@ -371,8 +315,8 @@ export default function ComplaintDetails() {
                         Currently Assigned To
                       </p>
                       <p className="font-medium text-sm">
-                        {complaint.assignedTo
-                          ? assignedTo?.name ?? `Staff ${complaint.assignedTo}`
+                        {complaintDetails?.assignedTo
+                          ? assignedTo?.name ?? `Staff ${complaintDetails.assignedTo}`
                           : "Assigned to nobody yet"}
                       </p>
                     </div>
@@ -381,10 +325,19 @@ export default function ComplaintDetails() {
                       <Label htmlFor="assign">Assign To</Label>
 
                       <Select
-                        value={assignedStaffId}
-                        onValueChange={setAssignedStaffId}
+                        value={assignData.assignTo}
+                        onValueChange={async (v) => {
+                          const [staffId, email] = v.split('-');
+                          console.log(staffId, email);
+                          setAssignData({
+                            ...assignData,
+                            assignTo: v,
+                            assignToEmail: email,
+                            assignToStaffId: staffId
+                          });
+                        }}
                         disabled={
-                          !employees.length || assigning || loadingEmployees
+                          !allRegionalStaffs?.data.length
                         }
                       >
                         <SelectTrigger id="assign">
@@ -395,27 +348,23 @@ export default function ComplaintDetails() {
                           />
                         </SelectTrigger>
                         <SelectContent>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.staffId} value={emp.staffId}>
-                              {emp.name}
+                          {allRegionalStaffs?.data.map((emp) => (
+                            <SelectItem key={emp.email} value={`${emp.staffId}-${emp.email}`}>
+                              {emp.staffId} --- {emp.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
 
                       <Button
-                        onClick={() => handleAssign(assignedStaffId)}
+                        onClick={() => handleAssign()}
                         disabled={
-                          !assignedStaffId || assigning || loadingEmployees
+                          !assignData.assignToStaffId
                         }
                         className="mt-2 w-full"
                       >
-                        {assigning
-                          ? complaint.assignedTo
-                            ? "Reassigning..."
-                            : "Assigning..."
-                          : complaint.assignedTo
-                          ? "Reassign"
+                        {isPending
+                          ? "Reassigning..."
                           : "Assign"}
                       </Button>
                     </div>
@@ -424,15 +373,110 @@ export default function ComplaintDetails() {
               </Card>
             )}
 
-            <div>
-              {complaint?.status.toLocaleLowerCase() === "new" ? (
+            <>
+              {complaintDetails?.status.toLocaleLowerCase() === "new" ? (
                 <ResolveComplaint
-                  complaintId={complaint.id}
+                  complaintId={complaintDetails.id ?? ""}
                   onResolved={handleResolved}
                 />
               ) : (
-                <div className="rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-                  ✅ This complaint has already been resolved.
+                <div className="rounded-xl border border-green-200 bg-green-50/50 overflow-hidden col-span-2">
+                  {/* Header Section */}
+                  <div className="bg-green-100/50 px-4 py-3 border-b border-green-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-green-800 font-semibold text-sm">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-200 text-green-700">
+                        ✓
+                      </span>
+                      Complaint Resolved
+                    </div>
+                    <span className="text-[10px] font-medium uppercase text-green-600 tracking-wider">
+                      {complaintDetails?.dateResolved
+                        ? new Date(complaintDetails?.dateResolved).toLocaleDateString()
+                        : 'Date Unknown'}
+                    </span>
+                  </div>
+
+                  {/* Comment Body */}
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-green-800 uppercase mb-1">
+                          Resolution Remark
+                        </p>
+                        <p className="text-sm text-green-900 leading-relaxed italic">
+                          "{complaintDetails?.feedback || "No resolution remark provided."}"
+                        </p>
+
+                        <div className="mt-4 flex items-center gap-2 pt-3 border-t border-green-200/50">
+                          <div className="h-7 w-7 rounded-full bg-green-200 flex items-center justify-center text-[10px] font-bold text-green-700">
+                            {complaintDetails?.resolvedBy?.substring(0, 2).toUpperCase() || 'ST'}
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-green-800 font-bold leading-none">
+                              Resolved By
+                            </p>
+                            <p className="text-[10px] text-green-600">
+                              Staff ID: {complaintDetails?.resolvedBy || 'System'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+
+            {isCustomerCareAgent && complaintDetails?.status.toLocaleLowerCase() === "approved" && (
+              <div className="col-span-2">
+                <CloseComplaint complaintId={complaintDetails.id ?? ""} />
+              </div>
+            )}
+            <div className="space-y-4">
+              {/* FINAL STATE: If status is closed, show the final closure details */}
+              {complaintDetails?.status.toLocaleLowerCase() === "closed" && (
+                <div className="rounded-xl border border-blue-200 bg-blue-50/30 overflow-hidden col-span-2">
+                  {/* Header */}
+                  <div className="bg-blue-100/50 px-4 py-3 border-b border-blue-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-blue-800 font-semibold text-sm">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white text-[10px]">
+                        🔒
+                      </span>
+                      Ticket Permanently Closed
+                    </div>
+                    <span className="text-[10px] font-medium uppercase text-blue-600 tracking-wider">
+                      {complaintDetails?.closedDate
+                        ? new Date(complaintDetails.closedDate).toLocaleString()
+                        : 'Date Unknown'}
+                    </span>
+                  </div>
+
+                  {/* Closure Content */}
+                  <div className="p-4">
+                    <p className="text-xs font-bold text-blue-800 uppercase mb-1">Final Closure Remark</p>
+                    <p className="text-sm text-gray-700 leading-relaxed bg-white/50 p-3 rounded-lg border border-blue-100 italic">
+                      "{complaintDetails?.closedByRemark || "The ticket was closed successfully without additional comments."}"
+                    </p>
+
+                    {/* Closing Officer Footer */}
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                          {complaintDetails?.closedBy?.substring(0, 2) || 'OP'}
+                        </div>
+                        <div>
+                          <p className="text-[11px] text-blue-900 font-bold leading-none">Closed By</p>
+                          <p className="text-[10px] text-blue-600">ID: {complaintDetails?.closedBy}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          Final Status: {complaintDetails?.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -441,7 +485,7 @@ export default function ComplaintDetails() {
 
         {/* CHAT SIDEBAR */}
         <div className="lg:col-span-1">
-          <ComplaintChat ticketId={complaint.id} user={user} />
+          <ComplaintChat ticketId={complaintDetails?.ticket} user={user} />
         </div>
       </div>
     </div>

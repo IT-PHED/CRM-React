@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosClient from "@/services/axiosClient";
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,17 +32,22 @@ import { Search, ArrowLeft } from "lucide-react";
 import { uploadFile } from "../services/fileUploadService";
 import { useAuth } from "@/contexts/AuthContext";
 import { showSuccess, showError, showConfirm } from "@/utils/alert";
+import * as apiService from "../services/apiEndpoints";
+import { toast } from "sonner";
+import { useCreateComplaint } from "@/hooks/useApiQuery";
 
 export default function NewComplaint() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [customerData, setCustomerData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const { createComplaint } = useCreateComplaint();
 
   const [priorities, setPriorities] = useState<any[]>([]);
   const [source, setsource] = useState<any[]>([]);
   const [complaintTypes, setComplaintTypes] = useState<any[]>([]);
   const [filteredSubtypes, setFilteredSubtypes] = useState<any[]>([]);
+  const [regionalMembers, setRegionalMembers] = useState<IEmployee[]>([]);
 
   const { user } = useAuth();
 
@@ -60,6 +66,9 @@ export default function NewComplaint() {
     remark: "",
     file: "",
     mediaLink: "",
+    assignToStaffId: "",
+    assignToEmail: "",
+    assignTo: ""
   });
 
   const handleAttachmentUpload = async (
@@ -142,6 +151,27 @@ export default function NewComplaint() {
     }
   }, [formData.complaintTypeId, complaintTypes]);
 
+  const onGetRegionalStaffs = async () => {
+    const accountNumber = customerData.accountNo;
+    const deptId = formData.departmentId;
+
+    try {
+      const regionalMembersResponse = await apiService.GetRegionalDepartmentMembers(deptId, accountNumber);
+
+      if (regionalMembersResponse.status === "success") {
+        setRegionalMembers(regionalMembersResponse.data);
+      }
+    } catch (err: any) {
+      toast.error(
+        err?.message || "Failed to fetch Assigned details",
+        { id: "fetch-assignee" }
+      );
+    }
+
+
+    console.log(accountNumber, deptId, "basic stuffs");
+  }
+
   const searchCustomer = async () => {
     if (!searchQuery.trim()) return;
 
@@ -217,6 +247,9 @@ export default function NewComplaint() {
       remark: "",
       file: "",
       mediaLink: "",
+      assignToEmail: "",
+      assignToStaffId: "",
+      assignTo: ""
     });
   };
 
@@ -237,6 +270,11 @@ export default function NewComplaint() {
       showError("Please fill all required fields");
       return;
     }
+
+    if (!formData.priority || formData.priority.length < 1) {
+      showError("please enter the priority");
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = {
@@ -252,14 +290,15 @@ export default function NewComplaint() {
         remark: formData.remark,
         file: formData.file,
         mediaLink: formData.mediaLink,
+        assignToStaffId: formData.assignToStaffId,
+        assignToEmail: formData.assignToEmail,
       };
 
-      const response = await axiosClient.post(`complaint`, payload);
+      console.log(payload);
 
-      debugger;
-
-      showSuccess(response.data.data);
-
+      // const response = await axiosClient.post(`complaint`, payload);
+      createComplaint(payload);
+      //showSuccess(response.data.data);
       resetSearch();
     } catch (error) {
       console.error("Error creating ticket:", error);
@@ -301,11 +340,10 @@ export default function NewComplaint() {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          customer.status === "Active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                        className={`px-2 py-1 rounded text-xs ${customer.status === "Active"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                          }`}
                       >
                         {customer.status}
                       </span>
@@ -416,8 +454,10 @@ export default function NewComplaint() {
                   <Label htmlFor="subtype">Complaint Subtype *</Label>
                   <Select
                     value={formData.complaintSubTypeId}
-                    onValueChange={(v) =>
-                      setFormData({ ...formData, complaintSubTypeId: v })
+                    onValueChange={async (v) => {
+                      setFormData({ ...formData, complaintSubTypeId: v });
+                      await onGetRegionalStaffs();
+                    }
                     }
                     disabled={!formData.complaintTypeId}
                     required
@@ -469,7 +509,7 @@ export default function NewComplaint() {
                     </SelectTrigger>
                     <SelectContent>
                       {source.map((source) => (
-                        <SelectItem key={source.id} value={source.id}>
+                        <SelectItem key={source.id} value={source.name}>
                           {source.name}
                         </SelectItem>
                       ))}
@@ -520,6 +560,36 @@ export default function NewComplaint() {
                     setFormData({ ...formData, remark: e.target.value })
                   }
                 />
+
+                <div className="col-span-2">
+                  <Label htmlFor="subtype">Assign To</Label>
+                  <Select
+                    value={formData.assignTo}
+                    onValueChange={async (v) => {
+                      const [staffId, email] = v.split('-');
+                      console.log(staffId, email);
+                      setFormData({
+                        ...formData,
+                        assignTo: v,
+                        assignToEmail: email,
+                        assignToStaffId: staffId
+                      });
+                    }
+                    }
+                    disabled={!formData.complaintSubTypeId}
+                  >
+                    <SelectTrigger id="Assign to">
+                      <SelectValue placeholder="Select Staff" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regionalMembers.map((member) => (
+                        <SelectItem key={member.email} value={`${member.staffId}-${member.email}`}>
+                          {member.staffId} --- {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* FIX: File input with ref and updated handler */}
                 <input

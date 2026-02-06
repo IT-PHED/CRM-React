@@ -37,127 +37,179 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronRight } from "lucide-react";
-const menuItems = [
-  {
-    title: "Dashboards",
-    icon: Home,
-    url: "/dashboard",
-  },
 
-  {
-    title: "Complaints/Requests",
-    icon: FileText,
-    url: "/complaints",
-    subItems: [
-      {
-        title: "New Complaint",
-        url: "/new-complaint",
-      },
-      {
-        title: "Pending",
-        url: "/complaints/pending",
-      },
-      // {
-      //   title: "Resolved",
-      //   url: "/complaints/resolved",
-      // },
-      // {
-      //   title: "Closed",
-      //   url: "/complaints/closed",
-      // },
-      {
-        title: "All Complaints - HQ",
-        url: "/complaints/all",
-      },
-      {
-        title: "All Complaints - Region",
-        url: "/complaints/department",
-      },
-    ],
-  },
-  {
-    title: "Configuration",
-    icon: Settings,
-    url: "/configuration",
-    subItems: [
-      {
-        title: "User Management",
-        url: "/configuration/users",
-      },
-      {
-        title: "Departments",
-        url: "/configuration/departments",
-      },
-      {
-        title: "Categories",
-        url: "/configuration/categories",
-      },
-      {
-        title: "SLA Settings",
-        url: "/configuration/sla",
-      },
-    ],
-  },
-  {
-    title: "CRM Reports",
-    icon: BarChart3,
-    url: "/crm-reports",
-    subItems: [
-      {
-        title: "Ticket Summary",
-        url: "/crm-reports/tickets",
-      },
-      {
-        title: "Division Reports",
-        url: "/crm-reports/divisions",
-      },
-      {
-        title: "Category Analysis",
-        url: "/crm-reports/categories",
-      },
-      {
-        title: "Performance Metrics",
-        url: "/crm-reports/performance",
-      },
-      {
-        title: "SLA Reports",
-        url: "/crm-reports/sla",
-      },
-    ],
-  },
-  {
-    title: "KYC Reports",
-    icon: ClipboardCheck,
-    url: "/kyc-reports",
-    subItems: [
-      {
-        title: "Customer Verification",
-        url: "/kyc-reports/verification",
-      },
-      {
-        title: "Pending KYC",
-        url: "/kyc-reports/pending",
-      },
-      {
-        title: "Approved KYC",
-        url: "/kyc-reports/approved",
-      },
-      {
-        title: "Rejected KYC",
-        url: "/kyc-reports/rejected",
-      },
-    ],
-  },
-];
 export function AppSidebar() {
   const { user } = useAuth();
   const { open } = useSidebar();
   const navigate = useNavigate();
-  
-    const handleLogout = () => {
-      user.logout();
-      navigate("/");
-    };
+
+  const customerServiceId = "64737384838778640014";
+  const isCustomerCareAgent = user?.departmentId == customerServiceId;
+
+  const menuItems = isCustomerCareAgent ? [
+    {
+      title: "Dashboards",
+      icon: Home,
+      url: "/dashboard",
+    },
+
+    {
+      title: "Complaints/Requests",
+      icon: FileText,
+      url: "/complaints",
+      subItems: [
+        {
+          title: "New Complaint",
+          url: "/new-complaint",
+        },
+        {
+          title: "Pending",
+          url: "/complaints/pending",
+        },
+        {
+          title: "All Complaints - HQ",
+          url: "/complaints/all",
+        },
+        {
+          title: "All Complaints - Region",
+          url: "/complaints/department",
+        },
+      ],
+    },
+    {
+      title: "Configuration",
+      icon: Settings,
+      url: "/configuration",
+      subItems: [
+        {
+          title: "User Management",
+          url: "/configuration/users",
+        },
+        {
+          title: "Departments",
+          url: "/configuration/departments",
+        },
+        {
+          title: "Categories",
+          url: "/configuration/categories",
+        },
+        {
+          title: "SLA Settings",
+          url: "/configuration/sla",
+        },
+      ],
+    },
+    {
+      title: "CRM Reports",
+      icon: BarChart3,
+      url: "/crm-reports",
+      subItems: [
+        {
+          title: "Ticket Summary",
+          url: "/crm-reports/tickets",
+        },
+        {
+          title: "Division Reports",
+          url: "/crm-reports/divisions",
+        },
+        {
+          title: "Category Analysis",
+          url: "/crm-reports/categories",
+        },
+        {
+          title: "Performance Metrics",
+          url: "/crm-reports/performance",
+        },
+        {
+          title: "SLA Reports",
+          url: "/crm-reports/sla",
+        },
+      ],
+    },
+    {
+      title: "KYC Reports",
+      icon: ClipboardCheck,
+      url: "/kyc-reports",
+      subItems: [
+        {
+          title: "Customer Verification",
+          url: "/kyc-reports/verification",
+        },
+        {
+          title: "Pending KYC",
+          url: "/kyc-reports/pending",
+        },
+        {
+          title: "Approved KYC",
+          url: "/kyc-reports/approved",
+        },
+        {
+          title: "Rejected KYC",
+          url: "/kyc-reports/rejected",
+        },
+      ],
+    },
+  ] : [
+    {
+      title: "Dashboards",
+      icon: Home,
+      url: "/dashboard",
+    },
+
+    {
+      title: "Complaints/Requests",
+      icon: FileText,
+      url: "/complaints",
+      subItems: [
+        {
+          title: "All Complaints - Department",
+          url: "/complaints/all-complaint",
+        },
+        {
+          title: "Pending complaints",
+          url: "/complaints/pending",
+        },
+        {
+          title: "All Complaints - Region",
+          url: "/complaints/department",
+        },
+      ],
+    },
+    {
+      title: "CRM Reports",
+      icon: BarChart3,
+      url: "/crm-reports",
+      subItems: [
+        {
+          title: "Ticket Summary",
+          url: "/crm-reports/tickets",
+        },
+        {
+          title: "Division Reports",
+          url: "/crm-reports/divisions",
+        },
+        {
+          title: "Category Analysis",
+          url: "/crm-reports/categories",
+        },
+        {
+          title: "Performance Metrics",
+          url: "/crm-reports/performance",
+        },
+        {
+          title: "SLA Reports",
+          url: "/crm-reports/sla",
+        },
+      ],
+    }
+  ];
+
+  console.log(user);
+
+  const handleLogout = () => {
+    user.logout();
+    navigate("/");
+  };
   return (
     <Sidebar className="border-r border-border">
       <SidebarContent className="bg-[sidebar-accent-foreground] bg-teal-900">

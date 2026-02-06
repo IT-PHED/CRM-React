@@ -17,8 +17,16 @@ import ComplaintDetails from "./pages/ComplaintDetails";
 import UserManagement from "./pages/UserManagement";
 
 import { DashboardLayout } from "./components/DashboardLayout";
+import AllComplaintDepartment from "./pages/AllComplaintDepartment";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // staleTime: 60 * 1000,
+      staleTime: 0,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -125,6 +133,7 @@ const App = () => (
                 </DashboardLayout>
               }
             />
+            <Route path="/complaints/all-complaint" element={<AllComplaintDepartment />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
