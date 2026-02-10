@@ -5,6 +5,8 @@ import {
   BarChart3,
   ClipboardCheck,
   FileQuestion,
+  UserCheck2,
+  UserCog2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -132,20 +134,19 @@ export function AppSidebar() {
       url: "/kyc-reports",
       subItems: [
         {
-          title: "Customer Verification",
-          url: "/kyc-reports/verification",
+          title: "Customer KYC",
+          url: "/kyc-reports",
         },
+      ],
+    },
+    {
+      title: "Customer Configuration",
+      icon: UserCog2,
+      url: "/customer",
+      subItems: [
         {
-          title: "Pending KYC",
-          url: "/kyc-reports/pending",
-        },
-        {
-          title: "Approved KYC",
-          url: "/kyc-reports/approved",
-        },
-        {
-          title: "Rejected KYC",
-          url: "/kyc-reports/rejected",
+          title: "Customer Information",
+          url: "/customer-info",
         },
       ],
     },

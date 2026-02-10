@@ -18,6 +18,7 @@ import UserManagement from "./pages/UserManagement";
 
 import { DashboardLayout } from "./components/DashboardLayout";
 import AllComplaintDepartment from "./pages/AllComplaintDepartment";
+import CustomerInformation from "./pages/CustomerInformation";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,8 +135,10 @@ const App = () => (
               }
             />
             <Route path="/complaints/all-complaint" element={<AllComplaintDepartment />} />
+            <Route path="/customer-info" element={<CustomerInformation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
+            
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
