@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GetAllDeptComplaintTable, useGetCrmMonthlyStats, useGetRegions } from "@/hooks/useApiQuery";
 import { Archive, BookDashed, BookmarkCheck, BookUp2Icon, BookUser, NotebookText, Search } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 const AllComplaintDepartment = () => {
@@ -20,6 +21,7 @@ const AllComplaintDepartment = () => {
     const { allDeptComplaints, isLoading } = GetAllDeptComplaintTable(searchQuery);
     const { monthlyStats } = useGetCrmMonthlyStats();
     const { allRegions } = useGetRegions();
+    const { token } = useAuth();
 
     const regions = allRegions?.data ?? [];
 

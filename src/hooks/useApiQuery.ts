@@ -10,7 +10,7 @@ import { useParams } from "react-router-dom";
  * COMPLAINT FUNCTIONALITY
  * 
  */
-export const useCreateComplaint = () => {
+export const useCreateComplaint = (onSuccess?: () => void) => {
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
@@ -29,6 +29,7 @@ export const useCreateComplaint = () => {
             });
 
             queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
+            onSuccess?.();
         },
         onError: (err: any) => {
             toast.error(

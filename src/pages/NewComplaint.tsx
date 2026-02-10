@@ -41,7 +41,9 @@ export default function NewComplaint() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [customerData, setCustomerData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { createComplaint } = useCreateComplaint();
+  const { createComplaint, isPending: submitting } = useCreateComplaint(() => {
+    resetSearch();
+  });
 
   const [priorities, setPriorities] = useState<any[]>([]);
   const [source, setsource] = useState<any[]>([]);
@@ -253,8 +255,6 @@ export default function NewComplaint() {
     });
   };
 
-  const [submitting, setSubmitting] = useState(false);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -275,7 +275,7 @@ export default function NewComplaint() {
       showError("please enter the priority");
       return;
     }
-    setSubmitting(true);
+
     try {
       const payload = {
         consumerNumber: customerData.accountNo,
@@ -294,17 +294,10 @@ export default function NewComplaint() {
         assignToEmail: formData.assignToEmail,
       };
 
-      console.log(payload);
-
-      // const response = await axiosClient.post(`complaint`, payload);
       createComplaint(payload);
-      //showSuccess(response.data.data);
-      resetSearch();
     } catch (error) {
       console.error("Error creating ticket:", error);
       showError("Error creating ticket");
-    } finally {
-      setSubmitting(false);
     }
   };
 

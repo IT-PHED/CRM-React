@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, FormEvent, CSSProperties } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -19,7 +20,7 @@ export default function OtpForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (otp.length !== 6) {
       setError("Please enter a complete 6-digit OTP");
       return;
@@ -33,13 +34,16 @@ export default function OtpForm() {
       const result = await verifyOtp(userProfile?.emailId, userProfile?.userName, otp);
 
       if (result.success === true) {
-        auth.login(result.data?.token, userProfile);
-        
+        const userProf = result.data?.data?.userProfile || null;
+
+        console.log(result.data?.data?.token, userProf, "token");
+
+        auth.login(result.data?.data?.token, userProf);
         if (saveUser && userProfile?.emailId) {
           localStorage.setItem("rememberedUser", userProfile.userName);
         } else {
           localStorage.removeItem("rememberedUser");
-        }     
+        }
         navigate("/dashboard");
       } else {
         setError(result.message || "Invalid OTP. Please try again.");
@@ -54,7 +58,7 @@ export default function OtpForm() {
   const handleResend = async () => {
     setLoading(true);
     setError("");
-    
+
     try {
       // Call your resend OTP API here
       // await resendOtp(userProfile?.email || userProfile?.staffId);
