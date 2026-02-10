@@ -10,7 +10,9 @@ import { useParams } from "react-router-dom";
  * COMPLAINT FUNCTIONALITY
  * 
  */
-export const useCreateComplaint = (onSuccess?: () => void) => {
+import { showSuccess } from "@/utils/alert";
+
+export const useCreateComplaint = (onSuccess?: (message?: string) => void) => {
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
@@ -23,14 +25,21 @@ export const useCreateComplaint = (onSuccess?: () => void) => {
         mutationFn: (payload: any) =>
             apiService.CreateComplaint(payload, token),
 
-        onSuccess: () => {
-            toast.success("Complaint created successfully 🎉", {
-                id: "create-complaint",
-            });
+        // Wait for user to confirm the alert before continuing
+        onSuccess: async (resp: any) => {
+            const message = resp?.data || "Complaint created successfully";
+
+            try {
+                await showSuccess(message, "Success");
+            } catch (e) {
+                // ignore modal errors and continue
+            }
 
             queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
-            onSuccess?.();
+            onSuccess?.(message);
         },
+
+
         onError: (err: any) => {
             toast.error(
                 err?.message || "Failed to create Complaint",
