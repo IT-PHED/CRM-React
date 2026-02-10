@@ -5,9 +5,22 @@ import { apiClient } from "./apiClient";
  * Complaints
  * @returns{promise<any>}
  */
-export const CreateComplaint = async (payload, token) => await apiClient<any>('POST', 'complaint', payload, token);
-export const GetComplaintInformationById = async (id: string, token: string) => await apiClient<IGetComplaintInfoResponse>("GET", `complaint/ticket/${id}`, null, token);
-export const GetDepartmentComplaints = async (deptId: string, token: string) => await apiClient<IDeptTicketApiResponse>("GET", `complaint/department/${deptId}?pageNumber=1&PageSize=1000`, null, token);
+export const CreateComplaint = async (payload, token) =>
+  await apiClient<any>("POST", "complaint", payload, token);
+export const GetComplaintInformationById = async (id: string, token: string) =>
+  await apiClient<IGetComplaintInfoResponse>(
+    "GET",
+    `complaint/ticket/${id}`,
+    null,
+    token
+  );
+export const GetDepartmentComplaints = async (deptId: string, token: string) =>
+  await apiClient<IDeptTicketApiResponse>(
+    "GET",
+    `complaint/department/${deptId}?pageNumber=1&PageSize=1000`,
+    null,
+    token
+  );
 export const QueryDepartmentComplaints = async (
   deptId: string,
   searchTerm: string = "",
@@ -24,8 +37,8 @@ export const QueryDepartmentComplaints = async (
   });
 
   // Only append date parameters if they have values
-  if (dateFrom) params.append('dateFrom', dateFrom);
-  if (dateTo) params.append('dateTo', dateTo);
+  if (dateFrom) params.append("dateFrom", dateFrom);
+  if (dateTo) params.append("dateTo", dateTo);
 
   return await apiClient<IDeptTicketApiResponse>(
     "GET",
@@ -33,14 +46,22 @@ export const QueryDepartmentComplaints = async (
   );
 };
 
-export const ReassignComplaint = async (payload: any, token: string) => await apiClient<any>("PATCH", "complaint/reassign", payload, token);
+export const ReassignComplaint = async (payload: any, token: string) =>
+  await apiClient<any>("PATCH", "complaint/reassign", payload, token);
 /**
  * Employees
  * @returns{promise<any>}
  */
-export const GetRegionalDepartmentMembers = async (deptId: string, accountNumber: string) => await apiClient<IRegionalDeptMemberResponse>("GET", `employees/regional-department-member?DepartmentId=${deptId}&AccountNumber=${accountNumber}`);
-export const GetRegions = async () => await apiClient<IRegionsResponse>("GET", `employees/regions`);
-
+export const GetRegionalDepartmentMembers = async (
+  deptId: string,
+  accountNumber: string
+) =>
+  await apiClient<IRegionalDeptMemberResponse>(
+    "GET",
+    `employees/regional-department-member?DepartmentId=${deptId}&AccountNumber=${accountNumber}`
+  );
+export const GetRegions = async () =>
+  await apiClient<IRegionsResponse>("GET", `employees/regions`);
 
 /**
  * Dashboard
@@ -52,7 +73,7 @@ export const GetCrmMonthlyStat = async (deptId: string, regionId?: string) => {
   });
 
   if (regionId) {
-    params.append('regionId', regionId);
+    params.append("regionId", regionId);
   }
 
   return await apiClient<IMonthlyStatResponse>(
@@ -65,5 +86,25 @@ export const GetCrmMonthlyStat = async (deptId: string, regionId?: string) => {
  * Complaints Resolution
  * @returns{promise<any>}
  */
-export const CloseComplaint = async (payload: any, token: string, complaintId: string) => await apiClient<any>("PATCH", `complaint-resolution/close-complaint/${complaintId}`, payload, token);
-export const ResolveComplaint = async (payload: any, token: string, complaintId: string) => await apiClient<any>("PATCH", `complaint-resolution/resolve-complaint/${complaintId}`, payload, token);
+export const CloseComplaint = async (
+  payload: any,
+  token: string,
+  complaintId: string
+) =>
+  await apiClient<any>(
+    "PATCH",
+    `complaint-resolution/close-complaint/${complaintId}`,
+    payload,
+    token
+  );
+export const ResolveComplaint = async (
+  payload: any,
+  token: string,
+  complaintId: string
+) =>
+  await apiClient<any>(
+    "PATCH",
+    `complaint-resolution/resolve-complaint/${complaintId}`,
+    payload,
+    token
+  );
