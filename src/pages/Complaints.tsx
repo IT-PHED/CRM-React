@@ -47,25 +47,24 @@ type Complaint = {
 };
 
 const statusColors: Record<string, string> = {
-  New: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  "IN PROGRESS": "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-  Resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-  Approved: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
-  Closed: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
+  new: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+  resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+  approved: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
+  closed: "bg-gray-900/10 text-gray-800 hover:bg-gray-800/20",
 };
 
 const priorityColors: Record<string, string> = {
-  Low: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
-  Medium: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  High: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20",
-  Critical: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+  low: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
+  medium: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+  high: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+  critical: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
 };
 
 const PAGE_SIZE = 50;
 
 export default function Complaints() {
-    const navigate = useNavigate();
-    
+  const navigate = useNavigate();
+
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -150,9 +149,10 @@ export default function Complaints() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = (row.getValue("status") as string) || "";
+        const key = status.toLowerCase();
         return (
-          <Badge className={statusColors[status] || statusColors.NEW}>
+          <Badge className={statusColors[key] ?? statusColors["new"]}>
             {status}
           </Badge>
         );
@@ -162,9 +162,10 @@ export default function Complaints() {
       accessorKey: "priority",
       header: "Priority",
       cell: ({ row }) => {
-        const priority = row.getValue("priority") as string;
+        const priority = (row.getValue("priority") as string) || "";
+        const key = priority.toLowerCase();
         return (
-          <Badge className={priorityColors[priority] || priorityColors.MEDIUM}>
+          <Badge className={priorityColors[key] ?? priorityColors["medium"]}>
             {priority}
           </Badge>
         );
@@ -210,8 +211,6 @@ export default function Complaints() {
 
   return (
     <div className="space-y-6">
- 
-
       <Card>
         <CardHeader>
           <CardTitle>All Complaints</CardTitle>
@@ -237,7 +236,9 @@ export default function Complaints() {
             </Button>
             <Select
               value={
-                (table.getColumn("status")?.getFilterValue() as string) ?? "all"
+                ((
+                  (table.getColumn("status")?.getFilterValue() as string) || ""
+                )?.toLowerCase() as string) ?? "all"
               }
               onValueChange={(value) =>
                 table
@@ -250,10 +251,10 @@ export default function Complaints() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="NEW">New</SelectItem>
-                <SelectItem value="IN PROGRESS">In Progress</SelectItem>
-                <SelectItem value="RESOLVED">Resolved</SelectItem>
-                <SelectItem value="CLOSED">Closed</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
           </div>
