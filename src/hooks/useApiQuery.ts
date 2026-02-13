@@ -1,193 +1,217 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as apiService from "../services/apiEndpoints";
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 
 /**
- * 
+ *
  * COMPLAINT FUNCTIONALITY
- * 
+ *
  */
 import { showSuccess } from "@/utils/alert";
 
 export const useCreateComplaint = (onSuccess?: (message?: string) => void) => {
-    const { token } = useAuth();
-    const queryClient = useQueryClient();
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
 
-    const {
-        mutate: createComplaint,
-        isPending,
-        data,
-        error,
-    } = useMutation({
-        mutationFn: (payload: any) =>
-            apiService.CreateComplaint(payload, token),
+  const {
+    mutate: createComplaint,
+    isPending,
+    data,
+    error,
+  } = useMutation({
+    mutationFn: (payload: any) => apiService.CreateComplaint(payload, token),
 
-        // Wait for user to confirm the alert before continuing
-        onSuccess: async (resp: any) => {
-            const message = resp?.data || "Complaint created successfully";
+    // Wait for user to confirm the alert before continuing
+    onSuccess: async (resp: any) => {
+      const message = resp?.data || "Complaint created successfully";
 
-            try {
-                await showSuccess(message, "Success");
-            } catch (e) {
-                // ignore modal errors and continue
-            }
+      try {
+        await showSuccess(message, "Success");
+      } catch (e) {
+        // ignore modal errors and continue
+      }
 
-            queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
-            onSuccess?.(message);
-        },
+      queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
+      onSuccess?.(message);
+    },
 
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to create Complaint", {
+        id: "create-complaint",
+      });
+    },
+  });
 
-        onError: (err: any) => {
-            toast.error(
-                err?.message || "Failed to create Complaint",
-                { id: "create-complaint" }
-            );
-        },
-    });
-
-    return {
-        createComplaint,
-        isPending,
-        data,
-        error,
-    };
-}
+  return {
+    createComplaint,
+    isPending,
+    data,
+    error,
+  };
+};
 
 export const useReassignComplaint = () => {
-    const { token } = useAuth();
-    const queryClient = useQueryClient();
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
 
-    const {
-        mutate: reassignComplaint,
-        isPending,
-        data,
-        error,
-    } = useMutation({
-        mutationFn: (payload: any) =>
-            apiService.ReassignComplaint(payload, token),
+  const {
+    mutate: reassignComplaint,
+    isPending,
+    data,
+    error,
+  } = useMutation({
+    mutationFn: (payload: any) => apiService.ReassignComplaint(payload, token),
 
-        onSuccess: () => {
-            toast.success("Complaint reassigned successfully 🎉", {
-                id: "reasign-complaint",
-            });
+    onSuccess: () => {
+      toast.success("Complaint reassigned successfully 🎉", {
+        id: "reasign-complaint",
+      });
 
-            queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
-        },
-        onError: (err: any) => {
-            toast.error(
-                err?.message || "Failed to reassign Complaint",
-                { id: "reassign-complaint" }
-            );
-        },
-    });
+      queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to reassign Complaint", {
+        id: "reassign-complaint",
+      });
+    },
+  });
 
-    return {
-        reassignComplaint,
-        isPending,
-        data,
-        error,
-    };
-}
+  return {
+    reassignComplaint,
+    isPending,
+    data,
+    error,
+  };
+};
 
 export const GetComplaintInformation = () => {
-    const { token } = useAuth();
-    const { id } = useParams<{ id: string }>();
+  const { token } = useAuth();
+  const { id } = useParams<{ id: string }>();
 
-    const { isLoading, data: complaintInfo, error } = useQuery({
-        queryKey: ["complaintInformation"],
-        queryFn: () => apiService.GetComplaintInformationById(id, token as string),
-    });
+  const {
+    isLoading,
+    data: complaintInfo,
+    error,
+  } = useQuery({
+    queryKey: ["complaintInformation"],
+    queryFn: () => apiService.GetComplaintInformationById(id, token as string),
+  });
 
-    return { isLoading, complaintInfo, error };
-}
+  return { isLoading, complaintInfo, error };
+};
 
 export const GetAllDeptComplaintTable = (searchId: string) => {
-    const { token, user } = useAuth();
+  const { token, user } = useAuth();
 
-    const { isLoading, data: allDeptComplaints, error } = useQuery({
-        queryKey: ["DeptComplaintInfo", user.departmentId, searchId],
-        queryFn: () => {
-            if (searchId) {
-                return apiService.QueryDepartmentComplaints(user.departmentId, searchId);
-            }
+  const {
+    isLoading,
+    data: allDeptComplaints,
+    error,
+  } = useQuery({
+    queryKey: ["DeptComplaintInfo", user.departmentId, searchId],
+    queryFn: () => {
+      if (searchId) {
+        return apiService.QueryDepartmentComplaints(
+          user.departmentId,
+          searchId
+        );
+      }
 
-            return apiService.GetDepartmentComplaints(user.departmentId, token as string);
-        }
-    });
+      return apiService.GetDepartmentComplaints(
+        user.departmentId,
+        token as string
+      );
+    },
+  });
 
-    return { isLoading, allDeptComplaints, error };
-}
+  return { isLoading, allDeptComplaints, error };
+};
 
 export const useGetCrmMonthlyStats = () => {
-    const { user } = useAuth();
+  const { user } = useAuth();
 
-    const { isLoading, data: monthlyStats, error } = useQuery({
-        queryKey: ["crmMonthlyStats"],
-        queryFn: () => apiService.GetCrmMonthlyStat(user.departmentId),
-    });
+  const {
+    isLoading,
+    data: monthlyStats,
+    error,
+  } = useQuery({
+    queryKey: ["crmMonthlyStats"],
+    queryFn: () => apiService.GetCrmMonthlyStat(user.departmentId),
+  });
 
-    return { isLoading, monthlyStats, error };
-}
+  return { isLoading, monthlyStats, error };
+};
 
 export const useGetRegions = () => {
-    const { isLoading, data: allRegions, error } = useQuery({
-        queryKey: ["allRegions"],
-        queryFn: () => apiService.GetRegions(),
-    });
+  const {
+    isLoading,
+    data: allRegions,
+    error,
+  } = useQuery({
+    queryKey: ["allRegions"],
+    queryFn: () => apiService.GetRegions(),
+  });
 
-    return { isLoading, allRegions, error };
-}
+  return { isLoading, allRegions, error };
+};
 
-export const useGetAllRegionalUsersTable = (departmentId: string, accountNumber: string) => {
-    const { isLoading, data: allRegionalStaffs, error } = useQuery({
-        queryKey: ["regionalUsers", departmentId, accountNumber],
-        queryFn: () => {
-            if (departmentId && accountNumber) {
-                return apiService.GetRegionalDepartmentMembers(departmentId, accountNumber);
-            }
+export const useGetAllRegionalUsersTable = (
+  departmentId: string,
+  accountNumber: string,
+  regionId: string
+) => {
+  const {
+    isLoading,
+    data: allRegionalStaffs,
+    error,
+  } = useQuery({
+    queryKey: ["regionalUsers", departmentId, accountNumber, regionId],
+    queryFn: () =>
+      apiService.GetRegionalDepartmentMembers(
+        departmentId,
+        accountNumber,
+        regionId
+      ),
+    enabled: !!departmentId && (!!accountNumber || !!regionId), // ← either condition satisfies
+  });
 
-            return;
-        }
-    });
-
-    return { isLoading, allRegionalStaffs, error };
-}
+  return { isLoading, allRegionalStaffs, error };
+};
 
 export const useCloseComplaint = (complaintId: string) => {
-    const { token } = useAuth();
-    const queryClient = useQueryClient();
+  const { token } = useAuth();
+  const queryClient = useQueryClient();
 
-    const {
-        mutate: closeComplaint,
-        isPending,
-        data,
-        error,
-    } = useMutation({
-        mutationFn: (payload: any) =>
-            apiService.CloseComplaint(payload, token, complaintId),
+  const {
+    mutate: closeComplaint,
+    isPending,
+    data,
+    error,
+  } = useMutation({
+    mutationFn: (payload: any) =>
+      apiService.CloseComplaint(payload, token, complaintId),
 
-        onSuccess: () => {
-            toast.success("Complaint close successfully 🎉", {
-                id: "close-complaint",
-            });
+    onSuccess: () => {
+      toast.success("Complaint close successfully 🎉", {
+        id: "close-complaint",
+      });
 
-            queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
-        },
-        onError: (err: any) => {
-            toast.error(
-                err?.message || "Failed to close Complaint",
-                { id: "close-complaint" }
-            );
-        },
-    });
+      queryClient.invalidateQueries({ queryKey: ["complaintInformation"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to close Complaint", {
+        id: "close-complaint",
+      });
+    },
+  });
 
-    return {
-        closeComplaint,
-        isPending,
-        data,
-        error,
-    };
-}
+  return {
+    closeComplaint,
+    isPending,
+    data,
+    error,
+  };
+};

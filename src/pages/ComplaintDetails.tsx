@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 import {
   Accordion,
@@ -14,16 +15,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { GetComplaintInformation, useGetAllRegionalUsersTable, useReassignComplaint } from "@/hooks/useApiQuery";
-import { Loader2, ZoomIn } from "lucide-react";
+import {
+  GetComplaintInformation,
+  useGetAllRegionalUsersTable,
+  useReassignComplaint,
+} from "@/hooks/useApiQuery";
+import { Check, ChevronsUpDown, Loader2, ZoomIn } from "lucide-react";
 import ResolveComplaint from "../components/ResolveComplaint";
 import ComplaintChat from "../pages/ComplaintChat";
 import CloseComplaint from "@/components/closeComplaint";
@@ -52,6 +63,8 @@ type ComplaintDetails = {
   ibc: string;
   bsc: string;
   assignedTo?: string | null;
+  regionId?: string | null;
+  region_Id?: string | null;
 };
 
 /* ================= COMPONENT ================= */
@@ -60,6 +73,15 @@ export default function ComplaintDetails() {
   const { user } = useAuth();
   const { isLoading, complaintInfo } = GetComplaintInformation();
 
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [complaint, setComplaint] = useState<ComplaintDetails | null>(null);
 
   const customerServiceId = "64737384838778640014";
@@ -67,13 +89,29 @@ export default function ComplaintDetails() {
 
   const complaintDetails = complaintInfo?.data;
 
-  const { allRegionalStaffs } = useGetAllRegionalUsersTable(user.departmentId, complaintDetails?.consumerNumber ?? "0");
+  const resolvedRegionId = complaintDetails?.regionId || "";
+
+  console.log("DEBUG: Resolved Region ID Value:", resolvedRegionId);
+  console.log("DEBUG: Hook Execution State:", {
+    isReady,
+    finalRegionIdSent: isReady
+      ? resolvedRegionId
+      : "EMPTY (Waiting for 2s delay)",
+    consumerId: complaintDetails?.consumerId,
+  });
+
+  const { allRegionalStaffs } = useGetAllRegionalUsersTable(
+    user.departmentId,
+    complaintDetails?.consumerId ?? "0",
+    isReady ? resolvedRegionId : ""
+  );
   const { reassignComplaint, isPending } = useReassignComplaint();
 
   // assignment state
   const [employees, setEmployees] = useState<any[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [assignedStaffId, setAssignedStaffId] = useState<string>("");
+  const [openAssign, setOpenAssign] = useState(false);
   const [assignedTo, setAssignedTo] = useState<{
     name?: string;
     email?: string;
@@ -81,9 +119,8 @@ export default function ComplaintDetails() {
   const [assignData, setAssignData] = useState({
     assignToStaffId: "",
     assignToEmail: "",
-    assignTo: ""
+    assignTo: "",
   });
-
 
   // resolve assigned staff's display name/email when employees or assignedStaffId change
   useEffect(() => {
@@ -144,7 +181,8 @@ export default function ComplaintDetails() {
               Ticket #{complaintDetails?.ticket}
             </CardTitle>
             <CardTitle className="text-md text-muted-foreground">
-              {complaintDetails?.complaintType} → {complaintDetails?.complaintSubType}
+              {complaintDetails?.complaintType} →{" "}
+              {complaintDetails?.complaintSubType}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {new Date(complaintDetails?.dateGenerated).toLocaleString()}
@@ -164,31 +202,66 @@ export default function ComplaintDetails() {
             <CardContent className="space-y-3">
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consumer Name</p>
-                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerName}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Consumer ID</p>
-                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Category</p>
-                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerCategory}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Phone</p>
-                  <p className="text-sm font-medium text-gray-900">{complaintDetails?.consumerPhoneNumber || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email</p>
-                  <p className="text-sm font-medium text-gray-900 truncate" title={complaintDetails?.email}>
-                    {complaintDetails?.email || 'N/A'}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Consumer Name
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {complaintDetails?.consumerName}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Date Generated</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Consumer ID
+                  </p>
                   <p className="text-sm font-medium text-gray-900">
-                    {complaintDetails?.dateGenerated ? new Date(complaintDetails.dateGenerated).toLocaleDateString() : 'N/A'}
+                    {complaintDetails?.consumerId}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Category
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {complaintDetails?.consumerCategory}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Phone
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {complaintDetails?.consumerPhoneNumber || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Email
+                  </p>
+                  <p
+                    className="text-sm font-medium text-gray-900 truncate"
+                    title={complaintDetails?.email}
+                  >
+                    {complaintDetails?.email || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Date Generated
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {complaintDetails?.dateGenerated
+                      ? new Date(
+                          complaintDetails.dateGenerated
+                        ).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Region ID
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {resolvedRegionId || "N/A"}
                   </p>
                 </div>
               </div>
@@ -198,23 +271,33 @@ export default function ComplaintDetails() {
               {/* Complaint Details Section */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Complaint Type</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Complaint Type
+                  </p>
                   <div className="mt-1">
                     <span className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-md">
                       {complaintDetails?.complaintType}
                     </span>
-                    <p className="text-sm text-gray-600 mt-1">{complaintDetails?.complaintSubType}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {complaintDetails?.complaintSubType}
+                    </p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">BSC</p>
-                  <p className="text-sm text-gray-900 mt-1">{complaintDetails?.bsc}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    BSC
+                  </p>
+                  <p className="text-sm text-gray-900 mt-1">
+                    {complaintDetails?.bsc}
+                  </p>
                 </div>
               </div>
 
               {/* Address Section */}
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Service Address</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Service Address
+                </p>
                 <p className="text-sm text-gray-700 mt-1 leading-relaxed">
                   {complaintDetails?.consumerAddress}
                 </p>
@@ -316,7 +399,8 @@ export default function ComplaintDetails() {
                       </p>
                       <p className="font-medium text-sm">
                         {complaintDetails?.assignedTo
-                          ? assignedTo?.name ?? `Staff ${complaintDetails.assignedTo}`
+                          ? assignedTo?.name ??
+                            `Staff ${complaintDetails.assignedTo}`
                           : "Assigned to nobody yet"}
                       </p>
                     </div>
@@ -324,48 +408,73 @@ export default function ComplaintDetails() {
                     <div className="mt-2">
                       <Label htmlFor="assign">Assign To</Label>
 
-                      <Select
-                        value={assignData.assignTo}
-                        onValueChange={async (v) => {
-                          const [staffId, email] = v.split('-');
-                          console.log(staffId, email);
-                          setAssignData({
-                            ...assignData,
-                            assignTo: v,
-                            assignToEmail: email,
-                            assignToStaffId: staffId
-                          });
-                        }}
-                        disabled={
-                          !allRegionalStaffs?.data.length
-                        }
-                      >
-                        <SelectTrigger id="assign">
-                          <SelectValue
-                            placeholder={
-                              loadingEmployees ? "Loading..." : "Select staff"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allRegionalStaffs?.data.map((emp) => (
-                            <SelectItem key={emp.email} value={`${emp.staffId}-${emp.email}`}>
-                              {emp.staffId} --- {emp.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={openAssign} onOpenChange={setOpenAssign}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openAssign}
+                            className="w-full justify-between"
+                            disabled={!allRegionalStaffs?.data?.length} // keep disabled when empty
+                          >
+                            {!allRegionalStaffs?.data?.length
+                              ? "No staff found"
+                              : assignData.assignTo
+                              ? allRegionalStaffs?.data.find(
+                                  (emp: any) =>
+                                    `${emp.staffId}-${emp.email}` ===
+                                    assignData.assignTo
+                                )?.name || "Select staff"
+                              : "Select staff"}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput placeholder="Search staff..." />
+                            <CommandList>
+                              <CommandEmpty>No staff found.</CommandEmpty>
+                              <CommandGroup>
+                                {allRegionalStaffs?.data.map((emp: any) => (
+                                  <CommandItem
+                                    key={emp.email}
+                                    value={`${emp.staffId}-${emp.email}`}
+                                    onSelect={(currentValue) => {
+                                      const [staffId, email] =
+                                        currentValue.split("-");
+                                      setAssignData({
+                                        ...assignData,
+                                        assignTo: currentValue,
+                                        assignToEmail: email,
+                                        assignToStaffId: staffId,
+                                      });
+                                      setOpenAssign(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        assignData.assignTo ===
+                                          `${emp.staffId}-${emp.email}`
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {emp.staffId} --- {emp.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
 
                       <Button
                         onClick={() => handleAssign()}
-                        disabled={
-                          !assignData.assignToStaffId
-                        }
+                        disabled={!assignData.assignToStaffId}
                         className="mt-2 w-full"
                       >
-                        {isPending
-                          ? "Reassigning..."
-                          : "Assign"}
+                        {isPending ? "Reassigning..." : "Assign"}
                       </Button>
                     </div>
                   </div>
@@ -391,8 +500,10 @@ export default function ComplaintDetails() {
                     </div>
                     <span className="text-[10px] font-medium uppercase text-green-600 tracking-wider">
                       {complaintDetails?.dateResolved
-                        ? new Date(complaintDetails?.dateResolved).toLocaleDateString()
-                        : 'Date Unknown'}
+                        ? new Date(
+                            complaintDetails?.dateResolved
+                          ).toLocaleDateString()
+                        : "Date Unknown"}
                     </span>
                   </div>
 
@@ -404,19 +515,25 @@ export default function ComplaintDetails() {
                           Resolution Remark
                         </p>
                         <p className="text-sm text-green-900 leading-relaxed italic">
-                          "{complaintDetails?.feedback || "No resolution remark provided."}"
+                          "
+                          {complaintDetails?.feedback ||
+                            "No resolution remark provided."}
+                          "
                         </p>
 
                         <div className="mt-4 flex items-center gap-2 pt-3 border-t border-green-200/50">
                           <div className="h-7 w-7 rounded-full bg-green-200 flex items-center justify-center text-[10px] font-bold text-green-700">
-                            {complaintDetails?.resolvedBy?.substring(0, 2).toUpperCase() || 'ST'}
+                            {complaintDetails?.resolvedBy
+                              ?.substring(0, 2)
+                              .toUpperCase() || "ST"}
                           </div>
                           <div>
                             <p className="text-[11px] text-green-800 font-bold leading-none">
                               Resolved By
                             </p>
                             <p className="text-[10px] text-green-600">
-                              Staff ID: {complaintDetails?.resolvedBy || 'System'}
+                              Staff ID:{" "}
+                              {complaintDetails?.resolvedBy || "System"}
                             </p>
                           </div>
                         </div>
@@ -427,11 +544,12 @@ export default function ComplaintDetails() {
               )}
             </>
 
-            {isCustomerCareAgent && complaintDetails?.status.toLocaleLowerCase() === "approved" && (
-              <div className="col-span-2">
-                <CloseComplaint complaintId={complaintDetails.id ?? ""} />
-              </div>
-            )}
+            {isCustomerCareAgent &&
+              complaintDetails?.status.toLocaleLowerCase() === "approved" && (
+                <div className="col-span-2">
+                  <CloseComplaint complaintId={complaintDetails.id ?? ""} />
+                </div>
+              )}
             <div className="space-y-4">
               {/* FINAL STATE: If status is closed, show the final closure details */}
               {complaintDetails?.status.toLocaleLowerCase() === "closed" && (
@@ -447,26 +565,35 @@ export default function ComplaintDetails() {
                     <span className="text-[10px] font-medium uppercase text-blue-600 tracking-wider">
                       {complaintDetails?.closedDate
                         ? new Date(complaintDetails.closedDate).toLocaleString()
-                        : 'Date Unknown'}
+                        : "Date Unknown"}
                     </span>
                   </div>
 
                   {/* Closure Content */}
                   <div className="p-4">
-                    <p className="text-xs font-bold text-blue-800 uppercase mb-1">Final Closure Remark</p>
+                    <p className="text-xs font-bold text-blue-800 uppercase mb-1">
+                      Final Closure Remark
+                    </p>
                     <p className="text-sm text-gray-700 leading-relaxed bg-white/50 p-3 rounded-lg border border-blue-100 italic">
-                      "{complaintDetails?.closedByRemark || "The ticket was closed successfully without additional comments."}"
+                      "
+                      {complaintDetails?.closedByRemark ||
+                        "The ticket was closed successfully without additional comments."}
+                      "
                     </p>
 
                     {/* Closing Officer Footer */}
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                          {complaintDetails?.closedBy?.substring(0, 2) || 'OP'}
+                          {complaintDetails?.closedBy?.substring(0, 2) || "OP"}
                         </div>
                         <div>
-                          <p className="text-[11px] text-blue-900 font-bold leading-none">Closed By</p>
-                          <p className="text-[10px] text-blue-600">ID: {complaintDetails?.closedBy}</p>
+                          <p className="text-[11px] text-blue-900 font-bold leading-none">
+                            Closed By
+                          </p>
+                          <p className="text-[10px] text-blue-600">
+                            ID: {complaintDetails?.closedBy}
+                          </p>
                         </div>
                       </div>
 
