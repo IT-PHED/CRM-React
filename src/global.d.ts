@@ -1,56 +1,57 @@
 interface IComplaintTicket {
-    id: string; // UUID format
-    ticket: string;
-    dateGenerated: string; // ISO 8601 format: "2025-12-22T16:27:37"
-    dateResolved: string | null;
-    isResolved: boolean;
-    status: string; // e.g., "Approved"
+  id: string; // UUID format
+  ticket: string;
+  dateGenerated: string; // ISO 8601 format: "2025-12-22T16:27:37"
+  dateResolved: string | null;
+  isResolved: boolean;
+  status: string; // e.g., "Approved"
 
-    consumerId: string;
-    consumerNumber: string | null;
-    consumerName: string;
-    consumerAddress: string;
-    consumerCategory: string; // e.g., "R2"
-    consumerPhoneNumber: string | null;
+  consumerId: string;
+  consumerNumber: string | null;
+  consumerName: string;
+  consumerAddress: string;
+  consumerCategory: string; // e.g., "R2"
+  consumerPhoneNumber: string | null;
 
-    complaintTypeId: string; // e.g., "B4"
-    complaintType: string; // e.g., "METER"
-    complaintSubTypeId: string; // e.g., "BS64"
-    complaintSubType: string; // e.g., "Meter- Running Fast"
+  complaintTypeId: string; // e.g., "B4"
+  complaintType: string; // e.g., "METER"
+  complaintSubTypeId: string; // e.g., "BS64"
+  complaintSubType: string; // e.g., "Meter- Running Fast"
 
-    remark: string;
-    mediaURL: string; // Note: Contains trailing spaces in source data
-    correctMeterReading: number;
-    source: string; // e.g., "2" (numeric string)
-    slaLevel: string | null;
+  remark: string;
+  mediaURL: string; // Note: Contains trailing spaces in source data
+  correctMeterReading: number;
+  source: string; // e.g., "2" (numeric string)
+  slaLevel: string | null;
 
-    email: string;
-    mobileNo: string | null;
-    telephoneNo: string | null;
+  email: string;
+  mobileNo: string | null;
+  telephoneNo: string | null;
 
-    meterNo: string;
-    maxDemand: string; // e.g., "NonMD"
-    routeNumber: string;
-    ibc: string;
-    bsc: string;
+  meterNo: string;
+  maxDemand: string; // e.g., "NonMD"
+  routeNumber: string;
+  ibc: string;
+  bsc: string;
 
-    address1: string;
-    address2: string;
-    address3: string | null;
+  address1: string;
+  address2: string;
+  address3: string | null;
 
-    assignedTo: string | null;
-    groupId: string | null;
-    resolvedBy: string | null; // User ID string
-    feedback: string | null;
+  assignedTo: string | null;
+  groupId: string | null;
+  resolvedBy: string | null; // User ID string
+  feedback: string | null;
 
-    closedBy: string | null;
-    closedByRemark: string | null;
-    closedDate: string | null; // ISO 8601
+  closedBy: string | null;
+  closedByRemark: string | null;
+  closedDate: string | null; // ISO 8601
 
-    createdBy: string; // User ID string
-    createdDate: string; // ISO 8601
-    modifiedBy: string | null; // User ID string
-    modifiedDate: string | null; // ISO 8601
+  createdBy: string; // User ID string
+  createdDate: string; // ISO 8601
+  modifiedBy: string | null; // User ID string
+  modifiedDate: string | null; // ISO 8601
+  regionId: string | null;
 }
 
 interface IAppResponseWrapper<T> {

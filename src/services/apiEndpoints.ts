@@ -1,12 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { apiClient } from "./apiClient";
 
+export interface ICreateComplaintWithoutAccountPayload {
+  complaintTypeId: string;
+  complaintSubTypeId: string;
+  source: string;
+  priority: string;
+  email: string;
+  departmentId: string;
+  mobileNumber: string;
+  remark: string;
+  type: string;
+  address: string;
+  regionId: string;
+  customerName: string;
+}
+
 /**
  * Complaints
  * @returns{promise<any>}
  */
 export const CreateComplaint = async (payload, token) =>
   await apiClient<any>("POST", "complaint", payload, token);
+
+export const CreateComplaintWithoutAccount = async (
+  payload: ICreateComplaintWithoutAccountPayload,
+  token: string
+) => await apiClient<any>("POST", "complaintWithoutAccountNo", payload, token);
+
 export const GetComplaintInformationById = async (id: string, token: string) =>
   await apiClient<IGetComplaintInfoResponse>(
     "GET",
@@ -54,11 +75,12 @@ export const ReassignComplaint = async (payload: any, token: string) =>
  */
 export const GetRegionalDepartmentMembers = async (
   deptId: string,
-  accountNumber: string
+  accountNumber: string,
+  regionId: string
 ) =>
   await apiClient<IRegionalDeptMemberResponse>(
     "GET",
-    `employees/regional-department-member?DepartmentId=${deptId}&AccountNumber=${accountNumber}`
+    `employees/regional-department-member?DepartmentId=${deptId}&AccountNumber=${accountNumber}&RegionId=${regionId}`
   );
 export const GetRegions = async () =>
   await apiClient<IRegionsResponse>("GET", `employees/regions`);

@@ -176,8 +176,8 @@ export default function Complaints() {
       header: "Source",
     },
     {
-      accessorKey: "meterNo",
-      header: "Meter No",
+      accessorKey: "assignedTo",
+      header: "Last Assigned To",
     },
     {
       id: "actions",
