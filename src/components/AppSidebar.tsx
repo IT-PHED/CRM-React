@@ -69,7 +69,7 @@ export function AppSidebar() {
           url: "/complaints/pending",
         },
         {
-          title: "All Complaints - HQ",
+          title: "All Complaints - Head Office",
           url: "/complaints/all",
         },
         {
