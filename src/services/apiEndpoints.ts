@@ -130,3 +130,25 @@ export const ResolveComplaint = async (
     payload,
     token
   );
+
+/**
+ * Customers Resolution
+ * @returns{promise<any>}
+ */
+export const GetCustomerCount = async (accountNumber: string) =>
+  await apiClient<AccountCountResponse>(
+    "GET",
+    `customer/count-by-account?consno=${accountNumber}`
+  );
+
+export const GetCustomerInformation = async (accountNumber: string) => await apiClient<IConsumerProfileResponse>("GET", `customer/check-cons/${accountNumber}`);
+
+export const GetCustomersLikeAccountNumber = async (accountNumber: string) =>
+  await apiClient<IAccountApiLikeResponse>(
+    "GET",
+    `customer/by-accountno?consno=${accountNumber}`
+  );
+
+export const GetCustomerTableInformation = async (accountNumber: string) => await apiClient<ICustomerInfoTableRespose>("GET", `customer/table-info/${accountNumber}`);
+export const GetCustomerMonthlyConsumption = async (accountNumber: string) => await apiClient<IMonthlyConsumptionResponse>("GET", `customer/monthly-consumption-stats?consno=${accountNumber}`);
+export const GetCustomerAccountStatement = async (accountNumber: string) => await apiClient<ICustomerAccountStatementApiResponse>("GET", `customer/account-statement/${accountNumber}`);

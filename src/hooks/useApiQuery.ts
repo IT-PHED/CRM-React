@@ -215,3 +215,98 @@ export const useCloseComplaint = (complaintId: string) => {
     error,
   };
 };
+
+export const useGetCustomerInformation = (customerNo: string, isEnabled: boolean) => {
+  const {
+    isLoading,
+    data: CustomerInformation,
+    error,
+  } = useQuery({
+    queryKey: ["customerInformation", customerNo],
+    queryFn: () => apiService.GetCustomerInformation(customerNo),
+    enabled: isEnabled,
+  });
+
+  return { isLoading, CustomerInformation, error };
+};
+
+export const useSearchCustomerInformation = (setMode: (mode: "single" | "multiple" | null) => void, setModalOpen: (open: boolean) => void) => {
+  const {
+    mutate: countCustomers,
+    isPending,
+    data,
+    error,
+  } = useMutation({
+    mutationFn: (customerNo: string) => apiService.GetCustomerCount(customerNo),
+    onSuccess: (data) => {
+      if (data?.data === 0) {
+        toast.error("No customer found with that account number", {
+          id: "search-customer",
+        });
+        setMode(null);
+      } else if (data?.data === 1) {
+        setMode("single");
+      } else {
+        setMode("multiple");
+        setModalOpen(true);
+      }
+    }
+  });
+
+  return { countCustomers, isPending, data, error };
+}
+
+export const useGetCustomersLikeAccountNumber = (accountNumber: string, isEnabled: boolean) => {
+  const {
+    isLoading,
+    data: getCustomersLikeAccountNumberResponse,
+    error,
+  } = useQuery({
+    queryKey: ["customersLikeAccountNumber", accountNumber],
+    queryFn: () => apiService.GetCustomersLikeAccountNumber(accountNumber),
+    enabled: isEnabled,
+  });
+
+  return { isLoading, getCustomersLikeAccountNumberResponse, error };
+}
+
+export const useGetCustomersTableInformation = (accountNumber: string) => {
+  const {
+    isLoading,
+    data: getCustomersTableInfoResponse,
+    error,
+  } = useQuery({
+    queryKey: ["customersTableInfo", accountNumber],
+    queryFn: () => apiService.GetCustomerTableInformation(accountNumber),
+  });
+
+  return { isLoading, getCustomersTableInfoResponse, error };
+}
+
+export const useGetCustomerMonthlyConsumption = (accountNumber: string, enabled: boolean) => {
+  const {
+    isLoading,
+    data: getCustomerMonthlyConsumptionResponse,
+    error,
+  } = useQuery({
+    queryKey: ["customerMonthlyConsumptionStats", accountNumber],
+    queryFn: () => apiService.GetCustomerMonthlyConsumption(accountNumber),
+    enabled: enabled,
+  });
+
+  return { isLoading, getCustomerMonthlyConsumptionResponse, error };
+}
+
+export const useGetCustomerAccountStatement = (accountNumber: string, enabled: boolean) => {
+  const {
+    isLoading,
+    data: getCustomerAccountStatement,
+    error,
+  } = useQuery({
+    queryKey: ["getCustomerAccountStatement", accountNumber],
+    queryFn: () => apiService.GetCustomerAccountStatement(accountNumber),
+    enabled: enabled,
+  });
+
+  return { isLoading, getCustomerAccountStatement, error };
+}
