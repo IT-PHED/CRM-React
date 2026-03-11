@@ -4,7 +4,7 @@ interface IComplaintTicket {
   dateGenerated: string; // ISO 8601 format: "2025-12-22T16:27:37"
   dateResolved: string | null;
   isResolved: boolean;
-  status: string; // e.g., "Approved"
+  status: string; // e.g., "Allocated"
 
   consumerId: string;
   consumerNumber: string | null;
@@ -89,7 +89,7 @@ interface ITicket {
     createdDate: string;           // ISO 8601 format
     modifiedBy: string | null;     // User ID or null
     modifiedDate: string | null;   // ISO 8601 or null
-    status: string;                // e.g., "New", "Approved", "Resolved"
+    status: string;                // e.g., "New", "Allocated", "Resolved"
 
     // Consumer details
     name: string;                  // Consumer name

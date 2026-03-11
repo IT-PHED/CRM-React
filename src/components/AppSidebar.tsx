@@ -65,8 +65,12 @@ export function AppSidebar() {
           url: "/new-complaint",
         },
         {
-          title: "Pending",
+          title: "All Complaints",
           url: "/complaints/pending",
+        },
+        {
+          title: "My Complaints",
+          url: "/complaints/my",
         },
         {
           title: "All Complaints - Head Office",
@@ -167,8 +171,12 @@ export function AppSidebar() {
           url: "/complaints/all-complaint",
         },
         {
-          title: "Pending complaints",
+          title: "All Complaints",
           url: "/complaints/pending",
+        },
+        {
+          title: "My Complaints",
+          url: "/complaints/my",
         },
         {
           title: "All Complaints - Region",

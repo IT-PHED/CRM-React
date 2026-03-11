@@ -49,7 +49,7 @@ type Complaint = {
 const statusColors: Record<string, string> = {
   new: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
   resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-  approved: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
+  allocated: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
   closed: "bg-gray-900/10 text-gray-800 hover:bg-gray-800/20",
 };
 
@@ -213,7 +213,7 @@ export default function Complaints() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>All Complaints</CardTitle>
+          <CardTitle>My Complaints</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -252,7 +252,7 @@ export default function Complaints() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="new">New</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="allocated">Allocated</SelectItem>
                 <SelectItem value="resolved">Resolved</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>

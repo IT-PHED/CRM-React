@@ -10,6 +10,7 @@ import OtpForm from "./components/OtpForm";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Complaints from "./pages/Complaints";
+import MyComplaints from "./pages/MyComplaints";
 import NotFound from "./pages/NotFound";
 import NewComplaint from "./pages/NewComplaint";
 import RegionalComplaint from "./pages/RegionalComplaint";
@@ -85,6 +86,14 @@ const App = () => (
               element={
                 <DashboardLayout>
                   <Complaints />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/complaints/my"
+              element={
+                <DashboardLayout>
+                  <MyComplaints />
                 </DashboardLayout>
               }
             />

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axiosClient from "@/services/axiosClient";
-import { useNavigate } from "react-router-dom";
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, ArrowUpDown, Eye, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 type Complaint = {
   id: string;
@@ -48,24 +47,24 @@ type Complaint = {
 };
 
 const statusColors: Record<string, string> = {
-  New: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  "IN PROGRESS": "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-  Resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-  Allocated: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
-  Closed: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
+  new: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+  resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
+  allocated: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
+  closed: "bg-gray-900/10 text-gray-800 hover:bg-gray-800/20",
 };
 
 const priorityColors: Record<string, string> = {
-  Low: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
-  Medium: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  High: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20",
-  Critical: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+  low: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
+  medium: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
+  high: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+  critical: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
 };
 
 const PAGE_SIZE = 50;
 
-export default function RegionalComplaint() {
+export default function MyComplaints() {
   const navigate = useNavigate();
+
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -75,25 +74,16 @@ export default function RegionalComplaint() {
   const [pageNumber, setPageNumber] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-    const { user } = useAuth();
-
-      if (!user) return null;
-
   const fetchComplaints = async (page: number, search?: string) => {
     setLoading(true);
     try {
-      const { data } = await axiosClient.get(
-       // "/complaint/department/" + user.departmentId,
-       `/complaint/department/${user.departmentId}/status`,
-        {
-          params: {
-            pageNumber: page,
-            status: "New",
-            PageSize: PAGE_SIZE,
-            ...(search && { searchTerm: search }),
-          },
-        }
-      );
+      const { data } = await axiosClient.get("/complaints/my", {
+        params: {
+          pageNumber: page,
+          PageSize: PAGE_SIZE,
+          ...(search && { searchTerm: search }),
+        },
+      });
       setComplaints(data.data.data);
       setHasMore(data.data.data.length === PAGE_SIZE);
     } catch (error) {
@@ -159,9 +149,10 @@ export default function RegionalComplaint() {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
+        const status = (row.getValue("status") as string) || "";
+        const key = status.toLowerCase();
         return (
-          <Badge className={statusColors[status] || statusColors.NEW}>
+          <Badge className={statusColors[key] ?? statusColors["new"]}>
             {status}
           </Badge>
         );
@@ -171,9 +162,10 @@ export default function RegionalComplaint() {
       accessorKey: "priority",
       header: "Priority",
       cell: ({ row }) => {
-        const priority = row.getValue("priority") as string;
+        const priority = (row.getValue("priority") as string) || "";
+        const key = priority.toLowerCase();
         return (
-          <Badge className={priorityColors[priority] || priorityColors.MEDIUM}>
+          <Badge className={priorityColors[key] ?? priorityColors["medium"]}>
             {priority}
           </Badge>
         );
@@ -184,8 +176,8 @@ export default function RegionalComplaint() {
       header: "Source",
     },
     {
-      accessorKey: "meterNo",
-      header: "Meter No",
+      accessorKey: "assignedTo",
+      header: "Last Assigned To",
     },
     {
       id: "actions",
@@ -219,10 +211,9 @@ export default function RegionalComplaint() {
 
   return (
     <div className="space-y-6">
-
       <Card>
         <CardHeader>
-          <CardTitle>Department Related Complaints</CardTitle>
+          <CardTitle>My Complaints</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -245,7 +236,9 @@ export default function RegionalComplaint() {
             </Button>
             <Select
               value={
-                (table.getColumn("status")?.getFilterValue() as string) ?? "all"
+                ((
+                  (table.getColumn("status")?.getFilterValue() as string) || ""
+                )?.toLowerCase() as string) ?? "all"
               }
               onValueChange={(value) =>
                 table
@@ -258,10 +251,10 @@ export default function RegionalComplaint() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="NEW">New</SelectItem>
-                <SelectItem value="IN PROGRESS">In Progress</SelectItem>
-                <SelectItem value="RESOLVED">Resolved</SelectItem>
-                <SelectItem value="CLOSED">Closed</SelectItem>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="allocated">Allocated</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
           </div>
