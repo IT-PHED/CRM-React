@@ -49,10 +49,18 @@ type Complaint = {
 
 const statusColors: Record<string, string> = {
   New: "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20",
-  "IN PROGRESS": "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-  Resolved: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-  Allocated: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
-  Closed: "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20",
+  Allocated: "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20",
+  Approved: "bg-green-500/40 text-green-500 hover:bg-green-500/60",
+  Closed: "bg-gray-900/10 text-gray-800 hover:bg-gray-800/20",
+  'IN-PROGRESS': "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
+};
+
+const statusNames: Record<string, string> = {
+  New: "New",
+  Allocated: "Assigned",
+  Approved: "Resolved",
+  Closed: "Closed",
+  'IN-PROGRESS': "In Progress",
 };
 
 const priorityColors: Record<string, string> = {

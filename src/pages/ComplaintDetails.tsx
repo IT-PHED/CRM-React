@@ -385,7 +385,7 @@ export default function ComplaintDetails() {
           </Accordion>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" && (
+            {(complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated") &&(
               <Card>
                 <CardHeader>
                   <CardTitle>Assign Staff</CardTitle>
@@ -480,10 +480,11 @@ export default function ComplaintDetails() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )
+          }
 
             <>
-              {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" ? (
+              {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" || complaintDetails?.status.toLocaleLowerCase() === "approved" ? (
                 <ResolveComplaint
                   complaintId={complaintDetails.id ?? ""}
                   onResolved={handleResolved}
