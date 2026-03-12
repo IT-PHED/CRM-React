@@ -121,8 +121,10 @@ const AllComplaintDepartment = () => {
                                 <SelectContent>
                                     <SelectItem value="all">All Status</SelectItem>
                                     <SelectItem value="new">New</SelectItem>
-                                    <SelectItem value="allocated">Allocated</SelectItem>
+                                    <SelectItem value="allocated">Assigned</SelectItem>
+                                    <SelectItem value="approved">Resolved</SelectItem>
                                     <SelectItem value="closed">Closed</SelectItem>
+                                    <SelectItem value="in progress">NERC</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Button variant="secondary">

@@ -92,7 +92,7 @@ const getStatusBadge = (status: string) => {
   const styles = {
     New: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
     Allocated: 'bg-warning/10 text-warning border-warning/20',
-    Resolved: 'bg-success/10 text-success border-success/20',
+    Approved: 'bg-success/10 text-success border-success/20',
     'In Progress': 'bg-primary/10 text-primary border-primary/20',
     Pending: 'bg-muted/10 text-muted-foreground border-muted/20',
     Closed: 'bg-gray-500/10 text-gray-600 border-gray-500/20'
@@ -101,8 +101,8 @@ const getStatusBadge = (status: string) => {
   const icons = {
     New: <AlertCircle className="w-3 h-3" />,
     Allocated: <CheckCircle className="w-3 h-3" />,
-    Resolved: <CheckCircle className="w-3 h-3" />,
-    'In Progress': <Clock className="w-3 h-3" />,
+    Approved: <CheckCircle className="w-3 h-3" />,
+    'IN-PROGRESS': <Clock className="w-3 h-3" />,
     Pending: <Clock className="w-3 h-3" />,
     Closed: <CheckCircle className="w-3 h-3" />
   };
