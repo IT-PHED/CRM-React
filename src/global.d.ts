@@ -304,8 +304,6 @@ interface IFeederMapping {
   TS_NAME: string | null;         // Transmission Station Name
   IBC_NAME: string | null;        // IBC Name
   BSC_NAME: string | null;        // BSC Name
-  
-  // Optional/Nullable fields (not displayed but part of object)
   ZONE?: string | null;
   REGION_ID?: number | null;
   REGION?: string | null;
@@ -331,6 +329,27 @@ interface IAccountHistoryRecord {
   BALANCE_CALC: number;
 }
 
+interface ISlaDashboardStats {
+  closecount: number;
+  opencount: number;
+  esclcount: number;
+  catcount: number;
+  datecount: number;
+  categorY_NAME: string | null;
+  name: string | null;
+  subcategorY_A_NAME: string | null;
+  subcategorY_B_NAME: string | null;
+  datE_CAT_NAME: string | null;
+  dates: string | null;
+  loC_COUNT: number;
+  diV_NAME: string | null;
+  diV_CAT: string | null;
+  duratioN_HRS: number;
+  duratioN_MINS: number;
+  division_code: string | null;
+  division_name: string | null;
+}
+
 interface IMonthlyDataPoint {
   MONTH: string;  // ISO 8601 date string: "2025-09-01T00:00:00"
   VALUE: number;
@@ -351,3 +370,4 @@ type IMonthlyConsumptionResponse = IAppResponseWrapper<{
 }>;
 
 type ICustomerAccountStatementApiResponse = IAppResponseWrapper<IAccountHistoryRecord[]>
+type ISlaTicketSummaryApiResponse = IAppResponseWrapper<ISlaDashboardStats[]>
