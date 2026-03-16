@@ -546,7 +546,7 @@ export default function ComplaintDetails() {
             </>
 
             {isCustomerCareAgent &&
-              complaintDetails?.status.toLocaleLowerCase() === "resolved" && (
+              complaintDetails?.status.toLocaleLowerCase() === "approved" && (
                 <div className="col-span-2">
                   <CloseComplaint complaintId={complaintDetails.id ?? ""} />
                 </div>

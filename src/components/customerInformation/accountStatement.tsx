@@ -225,7 +225,7 @@ const AccountStatement = ({ accountInfo }: Props) => {
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", fontSize: "12px", padding: "15px 0" }}>
                         <div>
                             <p><strong>Account No :</strong> {accountInfo.CONS_ACC}</p>
-                            <p><strong>MD/NonMD :</strong> {accountInfo.SBT_TARIFF}</p>
+                            <p><strong>MD/NonMD :</strong> {accountInfo.SBT_TARIFF?.split("-")[1]}</p>
                             <p><strong>Book No :</strong> {accountInfo.BOOKNO}</p>
                             <p><strong>Name :</strong> {accountInfo.CONSUMER_NAME}</p>
                             <p><strong>Address :</strong> {accountInfo.ADDRESS}</p>

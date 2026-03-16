@@ -104,6 +104,71 @@ export const GetCrmMonthlyStat = async (deptId: string, regionId?: string) => {
   );
 };
 
+export const GetTicketSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  return await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/ticket-summary?${params.toString()}`)
+}
+
+export const GetSlaCountSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  return await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/sla-count-summary?${params.toString()}`)
+}
+
+export const GetCategoryWiseSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  const result = await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/category-wise-summary?${params.toString()}`)
+  return result?.data;
+}
+
+export const GetDayWiseSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  const result = await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/date-wise-summary?${params.toString()}`)
+  return result?.data;
+}
+
+export const GetDivisionWiseSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  const result = await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/location-wise-summary?${params.toString()}`)
+  return result?.data;
+}
+
+export const GetEscalationAndSlaSummary = async (dateFrom: string, dateTo: string, divId: number = 0) => {
+  const params = new URLSearchParams({
+    fromDate: dateFrom,
+    toDate: dateTo,
+    divId: divId.toString()
+  });
+
+  const result = await apiClient<ISlaTicketSummaryApiResponse>("GET", `dashboard/sla-div-count-summary?${params.toString()}`)
+  return result?.data;
+}
+
+
 /**
  * Complaints Resolution
  * @returns{promise<any>}

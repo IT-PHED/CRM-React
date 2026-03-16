@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo } from "react";
+import { ClipboardList, MessageSquare, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -12,19 +15,31 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { ClipboardList, MessageSquare, Phone } from "lucide-react";
-import {
-  getCategoryWise,
-  getDateWise,
-  getLocationWise,
-  getSlaCount,
-  getSlaDivCount,
-  getSlaDuration,
-  getTicketSummary,
-} from "@/services/dashboardServices";
-import { useEffect, useState } from "react";
+
+import { useGetCategoryWiseSummary, useGetDayWiseSummary, useGetDivisionWiseSummary, useGetEscalationAndSlaSummary, useGetSlaCountSummary, useGetSlaTicketSummary } from "@/hooks/useApiQuery";
+
+// 3. Convert the object back into a sorted array for the chart
+type DswDataItem = {
+  date: string;
+  billing: number;
+  delay: number;
+  disconnection: number;
+  interruption: number;
+  meter: number;
+  others: number;
+  voltage: number;
+};
 
 export default function Dashboard() {
+  const { SlaTicketData: MonthlySlaData, isLoading: isMonthlySlaDataLoading } = useGetSlaTicketSummary("MONTH");
+  const { SlaTicketData: TodaySlaData, isLoading: isTodaySlaLoading } = useGetSlaTicketSummary("TODAY");
+  const { SlaCountData: monthlySlaCountData, isLoading: monthlySlaLoading } = useGetSlaCountSummary("MONTH");
+  const { SlaCountData: todaySlaCountData, isLoading: todaySlaCountLoading } = useGetSlaCountSummary("TODAY");
+  const { CategoryWiseData, isLoading: isCategoryWiseLoading } = useGetCategoryWiseSummary();
+  const { DayWiseData, isLoading: isDwDataLoading } = useGetDayWiseSummary()
+  const { DivisionWiseData, isLoading: isDivWiseLoading } = useGetDivisionWiseSummary();
+  const { EscalationAndSlaData, isLoading: isEscaltionAndSlaLoading } = useGetEscalationAndSlaSummary()
+
   const [data, setData] = useState({
     category: [],
     division: [],
@@ -46,101 +61,192 @@ export default function Dashboard() {
     "#38bdf8",
   ];
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        const [
-          category,
-          division,
-          date,
-          ticket,
-          location,
-          slaCount,
-          slaDuration,
-        ] = await Promise.all([
-          getCategoryWise(),
-          getSlaDivCount(),
-          getDateWise(),
-          getTicketSummary(),
-          getLocationWise(),
-          getSlaCount(),
-          getSlaDuration(),
-        ]);
-
-        setData({
-          category: category || [],
-          division: division || [],
-          date: date || [],
-          ticket: ticket ?? null,
-          location: location || [],
-          slaCount: slaCount || [],
-          slaDuration: slaDuration || [],
-        });
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-      }
-    };
-
-    loadDashboard();
-  }, []);
-
-  // Map API responses to chart-friendly shapes with safe fallbacks
-  const categoryData =
-    data.category && data.category.length > 0
-      ? data.category.map((c: any, i: number) => ({
-          name: c.name ?? c.category ?? c.label ?? `Item ${i + 1}`,
-          value: c.count ?? c.value ?? c.total ?? 0,
-          color: c.color ?? colors[i % colors.length],
-        }))
-      : [];
-
-  const ticketData = data.date && data.date.length > 0 ? data.date : [];
-
-  const divisionData =
-    data.division && data.division.length > 0 ? data.division : [];
-
   const slaData =
     data.slaCount && data.slaCount.length > 0 ? data.slaCount : [];
 
-  // Safely read ticket summary numbers (defensive against varying API shapes)
-  const getNumber = (obj: any, keys: string[]) => {
-    for (const k of keys) {
-      if (obj && typeof obj[k] === "number") return obj[k];
-    }
-    return "-";
-  };
 
-  const todayTotal = getNumber(data.ticket, [
-    "todayTotal",
-    "today_total",
-    "today?.total",
-    "today?.totalCount",
-  ]);
-  const todayOpen = getNumber(data.ticket, [
-    "todayOpen",
-    "today_open",
-    "today?.open",
-  ]);
-  const todayClosed = getNumber(data.ticket, [
-    "todayClosed",
-    "today_closed",
-    "today?.closed",
-  ]);
-  const monthlyTotal = getNumber(data.ticket, [
-    "monthlyTotal",
-    "monthly_total",
-    "monthly?.total",
-  ]);
-  const monthlyOpen = getNumber(data.ticket, [
-    "monthlyOpen",
-    "monthly_open",
-    "monthly?.open",
-  ]);
-  const monthlyClosed = getNumber(data.ticket, [
-    "monthlyClosed",
-    "monthly_closed",
-    "monthly?.closed",
-  ]);
+  const todaySlaSummary = useMemo(() => {
+    if (isTodaySlaLoading || !TodaySlaData?.data.length) return;
+
+    const raw = TodaySlaData?.data[0];
+
+    const totalTickets = raw.opencount + raw.closecount;
+
+    return {
+      totalTickets, closedTickets: raw.closecount, openTickets: raw.opencount
+    };
+  }, [TodaySlaData?.data, isTodaySlaLoading]);
+
+  const monthlySlaSummary = useMemo(() => {
+    if (isMonthlySlaDataLoading || !MonthlySlaData?.data.length) return;
+
+    const raw = MonthlySlaData?.data[0];
+
+    const totalTickets = raw.opencount + raw.closecount;
+
+    return {
+      totalTickets, closedTickets: raw.closecount, openTickets: raw.opencount
+    };
+  }, [MonthlySlaData?.data, isMonthlySlaDataLoading]);
+
+  const monthlySlaCount = useMemo(() => {
+    if (monthlySlaLoading || !monthlySlaCountData?.data.length) return;
+    const raw = monthlySlaCountData?.data[0];
+
+    return {
+      count: raw?.esclcount || 0,
+    }
+  }, [monthlySlaCountData?.data, monthlySlaLoading]);
+
+  const todaySlaCount = useMemo(() => {
+    if (todaySlaCountLoading || !todaySlaCountData?.data.length) return;
+    const raw = todaySlaCountData?.data[0];
+
+    return {
+      count: raw?.esclcount || 0,
+    }
+  }, [todaySlaCountData?.data, todaySlaCountLoading]);
+
+  const { categoryWiseData: csWiseData } = useMemo(() => {
+    if (isCategoryWiseLoading || !CategoryWiseData?.length) return { categoryWiseData: [], labels: [] };
+
+    const raw = CategoryWiseData;
+
+    const categoryWiseData = raw.map((item, i) => ({
+      name: item.categorY_NAME,
+      value: Number(item.catcount),
+      color: colors[i % colors.length],
+    }));
+
+    const labels = raw.map((item) => item.categorY_NAME);
+
+    return { categoryWiseData, labels };
+  }, [CategoryWiseData, colors, isCategoryWiseLoading]);
+
+  const dswData = useMemo(() => {
+    if (isDwDataLoading || !DayWiseData?.length) return [];
+
+    const groupedByDate = DayWiseData.reduce((acc, item) => {
+      const date = item.dates;
+      const category = item.datE_CAT_NAME.toLowerCase();
+      const count = item.datecount;
+
+      if (!acc[date]) {
+        // Initialize the object for this date
+        acc[date] = {
+          date: date,
+          billing: 0,
+          delay: 0,
+          disconnection: 0,
+          interruption: 0,
+          meter: 0,
+          others: 0,
+          voltage: 0,
+        };
+      }
+
+      // 2. Map the category names to the keys used in your <Bar> components
+      if (category.includes("billing")) acc[date].billing += count;
+      else if (category.includes("delay")) acc[date].delay += count;
+      else if (category.includes("disconnection")) acc[date].disconnection += count;
+      else if (category.includes("interruption")) acc[date].interruption += count;
+      else if (category.includes("meter")) acc[date].meter += count;
+      else if (category.includes("voltage")) acc[date].voltage += count;
+      else acc[date].others += count;
+
+      return acc;
+    }, {});
+
+
+    return (Object.values(groupedByDate) as DswDataItem[]).sort((a, b) => {
+      // Basic date sort (assuming DD-MM-YYYY format)
+      const dateA = a.date.split('-').reverse().join('');
+      const dateB = b.date.split('-').reverse().join('');
+      return dateA.localeCompare(dateB);
+    });
+  }, [DayWiseData, isDwDataLoading]);
+
+  const divisData = useMemo(() => {
+    if (isDivWiseLoading || !DivisionWiseData?.length) return [];
+
+    const grouped = DivisionWiseData?.reduce((acc, item) => {
+      const divName = item.diV_NAME;
+      // Skip rows where division name is null
+      if (!divName || divName === "null") return acc;
+
+      const category = (item.diV_CAT || "").toLowerCase();
+      const count = item.loC_COUNT || 0;
+
+      if (!acc[divName]) {
+        acc[divName] = {
+          division: divName,
+          billing: 0,
+          delay: 0,
+          disconnection: 0,
+          interruption: 0,
+          meter: 0,
+          voltage: 0,
+          others: 0,
+          total: 0
+        };
+      }
+
+      // Mapping categories to keys
+      if (category.includes("billing")) acc[divName].billing += count;
+      else if (category.includes("delay")) acc[divName].delay += count;
+      else if (category.includes("disconnection")) acc[divName].disconnection += count;
+      else if (category.includes("interruption")) acc[divName].interruption += count;
+      else if (category.includes("meter")) acc[divName].meter += count;
+      else if (category.includes("voltage")) acc[divName].voltage += count;
+      else acc[divName].others += count;
+
+      acc[divName].total += count;
+      return acc;
+    }, {});
+
+    return (Object.values(grouped) as { total: number }[]).sort((a, b) => b.total - a.total);
+  }, [DivisionWiseData, isDivWiseLoading]);
+
+  const escalationData = useMemo(() => {
+    if (isEscaltionAndSlaLoading || !EscalationAndSlaData?.length) return [];
+
+    const grouped = EscalationAndSlaData?.reduce((acc, item) => {
+      const divName = item.diV_NAME;
+      if (!divName || divName === "null") return acc;
+
+      const category = (item.diV_CAT || "").toLowerCase();
+      const count = item.esclcount || 0;
+
+      if (!acc[divName]) {
+        acc[divName] = {
+          division: divName,
+          billing: 0,
+          delay: 0,
+          disconnection: 0,
+          interruption: 0,
+          meter: 0,
+          voltage: 0,
+          others: 0,
+          total: 0
+        };
+      }
+
+      // Mapping categories to keys
+      if (category.includes("billing")) acc[divName].billing += count;
+      else if (category.includes("delay")) acc[divName].delay += count;
+      else if (category.includes("disconnection")) acc[divName].disconnection += count;
+      else if (category.includes("interruption")) acc[divName].interruption += count;
+      else if (category.includes("meter")) acc[divName].meter += count;
+      else if (category.includes("voltage")) acc[divName].voltage += count;
+      else acc[divName].others += count;
+
+      acc[divName].total += count;
+      return acc;
+    }, {});
+
+    return (Object.values(grouped) as { total: number }[]).sort((a, b) => b.total - a.total);
+  }, [EscalationAndSlaData, isEscaltionAndSlaLoading]);
+
 
   return (
     <div className="space-y-6">
@@ -156,15 +262,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-xs opacity-90 mb-1">Today</div>
-                <div className="font-semibold">Total: {todayTotal}</div>
-                <div className="font-semibold">Open: {todayOpen}</div>
-                <div className="font-semibold">Closed: {todayClosed}</div>
+                <div className="font-semibold">Total: {todaySlaSummary?.totalTickets ?? "0"}</div>
+                <div className="font-semibold">Open: {todaySlaSummary?.openTickets ?? "0"}</div>
+                <div className="font-semibold">Closed: {todaySlaSummary?.closedTickets ?? "0"}</div>
               </div>
               <div>
                 <div className="text-xs opacity-90 mb-1">Monthly</div>
-                <div className="font-semibold">Total: {monthlyTotal}</div>
-                <div className="font-semibold">Open: {monthlyOpen}</div>
-                <div className="font-semibold">Closed: {monthlyClosed}</div>
+                <div className="font-semibold">Total: {monthlySlaSummary?.totalTickets ?? "0"}</div>
+                <div className="font-semibold">Open: {monthlySlaSummary?.openTickets ?? "0"}</div>
+                <div className="font-semibold">Closed: {monthlySlaSummary?.closedTickets ?? "0"}</div>
               </div>
             </div>
           </CardContent>
@@ -182,20 +288,13 @@ export default function Dashboard() {
               <div>
                 <div className="text-xs opacity-90 mb-1">Today</div>
                 <div className="text-3xl font-bold">
-                  {data.slaCount && data.slaCount.length
-                    ? data.slaCount[0].escalated ?? 0
-                    : 0}
+                  {todaySlaCount?.count ?? "0"}
                 </div>
               </div>
               <div>
                 <div className="text-xs opacity-90 mb-1">Monthly</div>
                 <div className="text-3xl font-bold">
-                  {data.slaCount && data.slaCount.length
-                    ? data.slaCount.reduce(
-                        (s: any, x: any) => s + (x.escalated ?? 0),
-                        0
-                      )
-                    : 0}
+                  {monthlySlaCount?.count ?? "0"}
                 </div>
               </div>
             </div>
@@ -230,7 +329,7 @@ export default function Dashboard() {
             <CardTitle className="text-base">Category Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            {categoryData.length === 0 ? (
+            {csWiseData?.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 No category data available
               </div>
@@ -239,14 +338,14 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={categoryData}
+                      data={csWiseData}
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
                       dataKey="value"
-                      label={(entry) => entry.name}
+                    // label={(entry) => entry.name}
                     >
-                      {categoryData.map((entry, index) => (
+                      {csWiseData?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -254,7 +353,7 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-wrap gap-3 mt-4 justify-center text-xs">
-                  {categoryData.map((item) => (
+                  {csWiseData?.map((item) => (
                     <div key={item.name} className="flex items-center gap-1">
                       <div
                         className="w-3 h-3 rounded-sm"
@@ -274,13 +373,13 @@ export default function Dashboard() {
             <CardTitle className="text-base">Day Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            {ticketData.length === 0 ? (
+            {dswData.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 No day-wise ticket data available
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ticketData}>
+                <BarChart data={dswData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
@@ -347,13 +446,13 @@ export default function Dashboard() {
             <CardTitle className="text-base">Division Wise Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            {divisionData.length === 0 ? (
+            {divisData.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 No division data available
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={divisionData}>
+                <BarChart data={divisData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="division"
@@ -364,7 +463,48 @@ export default function Dashboard() {
                   />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#60a5fa" />
+                  <Bar
+                    dataKey="billing"
+                    stackId="a"
+                    fill="#60a5fa"
+                    name="Billing"
+                  />
+                  <Bar
+                    dataKey="delay"
+                    stackId="a"
+                    fill="#f87171"
+                    name="Delay in Connection"
+                  />
+                  <Bar
+                    dataKey="disconnection"
+                    stackId="a"
+                    fill="#86efac"
+                    name="Disconnection"
+                  />
+                  <Bar
+                    dataKey="interruption"
+                    stackId="a"
+                    fill="#fbbf24"
+                    name="Interruption"
+                  />
+                  <Bar
+                    dataKey="meter"
+                    stackId="a"
+                    fill="#a78bfa"
+                    name="Meter"
+                  />
+                  <Bar
+                    dataKey="others"
+                    stackId="a"
+                    fill="#fb923c"
+                    name="Others"
+                  />
+                  <Bar
+                    dataKey="voltage"
+                    stackId="a"
+                    fill="#38bdf8"
+                    name="Voltage"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -378,13 +518,13 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {slaData.length === 0 ? (
+            {escalationData.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 No SLA data available
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={slaData}>
+                <BarChart data={escalationData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="division"
@@ -395,7 +535,48 @@ export default function Dashboard() {
                   />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#38bdf8" />
+                  <Bar
+                    dataKey="billing"
+                    stackId="a"
+                    fill="#60a5fa"
+                    name="Billing"
+                  />
+                  <Bar
+                    dataKey="delay"
+                    stackId="a"
+                    fill="#f87171"
+                    name="Delay in Connection"
+                  />
+                  <Bar
+                    dataKey="disconnection"
+                    stackId="a"
+                    fill="#86efac"
+                    name="Disconnection"
+                  />
+                  <Bar
+                    dataKey="interruption"
+                    stackId="a"
+                    fill="#fbbf24"
+                    name="Interruption"
+                  />
+                  <Bar
+                    dataKey="meter"
+                    stackId="a"
+                    fill="#a78bfa"
+                    name="Meter"
+                  />
+                  <Bar
+                    dataKey="others"
+                    stackId="a"
+                    fill="#fb923c"
+                    name="Others"
+                  />
+                  <Bar
+                    dataKey="voltage"
+                    stackId="a"
+                    fill="#38bdf8"
+                    name="Voltage"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}

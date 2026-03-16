@@ -11,6 +11,7 @@ import { useParams } from "react-router-dom";
  *
  */
 import { showSuccess } from "@/utils/alert";
+import { useMemo } from "react";
 
 export const useCreateComplaint = (onSuccess?: (message?: string) => void) => {
   const { token } = useAuth();
@@ -309,4 +310,174 @@ export const useGetCustomerAccountStatement = (accountNumber: string, enabled: b
   });
 
   return { isLoading, getCustomerAccountStatement, error };
+}
+
+export const useGetSlaTicketSummary = (range: "MONTH" | "TODAY") => {
+  let dateFrom: string;
+  let dateTo: string;
+
+  const now = new Date();
+
+  if (range === "MONTH") {
+    // First day of month in UTC
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+    const to = new Date();
+
+    dateFrom = from.toISOString();
+    dateTo = to.toISOString();
+
+  } else {
+    // Start of today in UTC
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0, 0, 0
+    ));
+
+    const to = new Date();
+
+    dateFrom = from.toISOString();
+    dateTo = to.toISOString();
+  }
+
+  const { isLoading, data: SlaTicketData, error } = useQuery({
+    queryKey: ["getSlaTicketSummary", range],
+    queryFn: () => apiService.GetTicketSummary(dateFrom, dateTo),
+  });
+
+  return { isLoading, SlaTicketData, error }
+}
+
+export const useGetSlaCountSummary = (range: "MONTH" | "TODAY") => {
+  let dateFrom: string;
+  let dateTo: string;
+
+  const now = new Date();
+
+  if (range === "MONTH") {
+    // First day of month in UTC
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+    const to = new Date();
+
+    dateFrom = from.toISOString();
+    dateTo = to.toISOString();
+
+  } else {
+    // Start of today in UTC
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      0, 0, 0
+    ));
+
+    const to = new Date();
+
+    dateFrom = from.toISOString();
+    dateTo = to.toISOString();
+  }
+
+  const { isLoading, data: SlaCountData, error } = useQuery({
+    queryKey: ["getSlaCountSummary", range],
+    queryFn: () => apiService.GetSlaCountSummary(dateFrom, dateTo),
+  });
+
+  return { isLoading, SlaCountData, error }
+}
+
+export const useGetCategoryWiseSummary = () => {
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      1
+    ));
+
+    return {
+      dateFrom: from.toISOString(),
+      dateTo: now.toISOString(),
+    };
+  }, []);
+
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["getCategoryWiseSummaryData", dateFrom, dateTo],
+    queryFn: () => apiService.GetCategoryWiseSummary(dateFrom, dateTo, 0),
+  });
+
+  return { isLoading, CategoryWiseData: data, error };
+}
+
+export const useGetDayWiseSummary = () => {
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      1
+    ));
+
+    return {
+      dateFrom: from.toISOString(),
+      dateTo: now.toISOString(),
+    };
+  }, []);
+
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["getDayWiseSummaryData", dateFrom, dateTo],
+    queryFn: () => apiService.GetDayWiseSummary(dateFrom, dateTo, 0),
+  });
+
+  return { isLoading, DayWiseData: data, error }
+}
+
+export const useGetDivisionWiseSummary = () => {
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      1
+    ));
+
+    return {
+      dateFrom: from.toISOString(),
+      dateTo: now.toISOString(),
+    };
+  }, []);
+
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["getDivisionWiseSummaryData", dateFrom, dateTo],
+    queryFn: () => apiService.GetDivisionWiseSummary(dateFrom, dateTo, 0),
+  });
+
+  return { isLoading, DivisionWiseData: data, error }
+}
+
+export const useGetEscalationAndSlaSummary = () => {
+  const { dateFrom, dateTo } = useMemo(() => {
+    const now = new Date();
+
+    const from = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      1
+    ));
+
+    return {
+      dateFrom: from.toISOString(),
+      dateTo: now.toISOString(),
+    };
+  }, []);
+
+  const { isLoading, data, error } = useQuery({
+    queryKey: ["getEscalationAndSlaData", dateFrom, dateTo],
+    queryFn: () => apiService.GetEscalationAndSlaSummary(dateFrom, dateTo, 0),
+  });
+
+  return { isLoading, EscalationAndSlaData: data, error }
 }
