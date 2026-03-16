@@ -484,7 +484,7 @@ export default function ComplaintDetails() {
           }
 
             <>
-              {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" || complaintDetails?.status.toLocaleLowerCase() === "approved" ? (
+              {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" ? (
                 <ResolveComplaint
                   complaintId={complaintDetails.id ?? ""}
                   onResolved={handleResolved}
