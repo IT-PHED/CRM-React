@@ -149,7 +149,7 @@ export default function ComplaintDetails() {
 
       return {
         ...prev,
-        status: "Resolved",
+        status: "Approved",
         dateResolved: new Date().toISOString(),
       };
     });
@@ -484,7 +484,7 @@ export default function ComplaintDetails() {
           }
 
             <>
-              {complaintDetails?.status.toLocaleLowerCase() === "new" || complaintDetails?.status.toLocaleLowerCase() === "allocated" ? (
+              {complaintDetails?.status.toLocaleLowerCase() !== "approved" ? (
                 <ResolveComplaint
                   complaintId={complaintDetails.id ?? ""}
                   onResolved={handleResolved}
