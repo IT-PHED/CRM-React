@@ -321,9 +321,9 @@ export default function NewComplaint() {
       !formData.complaintSubTypeId ||
       !formData.departmentId ||
       !formData.complaintTypeId ||
-      !formData.priority 
-      // !formData.mobileNumber ||
-      // !formData.email
+      !formData.priority ||
+      !formData.mobileNumber ||
+      !formData.email
     ) {
       showError("Please fill all required fields");
       return;
@@ -810,18 +810,18 @@ export default function NewComplaint() {
                     </div>
 
                     <div>
-                      <Label>Email</Label>
+                      <Label>Email *</Label>
                       <Input
                         value={formData.email}
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        // required
+                        required
                       />
                     </div>
 
                     <div>
-                      <Label>Mobile Number</Label>
+                      <Label>Mobile Number *</Label>
                       <Input
                         value={formData.mobileNumber}
                         onChange={(e) =>
@@ -830,7 +830,7 @@ export default function NewComplaint() {
                             mobileNumber: e.target.value,
                           })
                         }
-                        // required
+                        required
                       />
                     </div>
 
