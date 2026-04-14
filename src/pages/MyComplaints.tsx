@@ -44,6 +44,8 @@ type Complaint = {
   createdDate: string;
   meterNo: string;
   telephoneNo: string;
+  assignedTo?: string;
+  dateResolved?: string | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -187,6 +189,29 @@ export default function MyComplaints() {
     {
       accessorKey: "assignedTo",
       header: "Last Assigned To",
+    },
+    {
+      accessorKey: "dateResolved",
+      header: "Resolved At",
+      cell: ({ row }) => {
+        const rawDate = row.getValue("dateResolved") as string | undefined | null;
+        const formattedDate = rawDate
+          ? new Date(rawDate).toLocaleString("en-CA", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).replace(",", "")
+          : "";
+
+        return (
+          <div className="max-w-[200px] truncate">
+            {formattedDate}
+          </div>
+        );
+      },
     },
     {
       id: "actions",
