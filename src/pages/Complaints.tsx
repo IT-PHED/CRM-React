@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axiosClient from "@/services/axiosClient";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from 'xlsx';
 import {
   useReactTable,
   getCoreRowModel,
@@ -44,6 +47,8 @@ type Complaint = {
   createdDate: string;
   meterNo: string;
   telephoneNo: string;
+  assignedTo?: string;
+  dateResolved?: string | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -82,6 +87,126 @@ export default function Complaints() {
   const [searchTerm, setSearchTerm] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const tableRef = useRef<HTMLDivElement | null>(null);
+
+  const exportRows = complaints.map((complaint) => ({
+      Ticket: complaint.ticket,
+      "Account No": complaint.consumerId,
+      Type: complaint.complaintTypeId,
+      Subtype: complaint.complaintSubtypeId,
+      Status: complaint.status,
+      Priority: complaint.priority,
+      Source: complaint.source,
+      "Last Assigned To": complaint.assignedTo ?? "",
+      "Resolved At": complaint.dateResolved
+        ? new Date(complaint.dateResolved).toLocaleString("en-CA", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).replace(",", "")
+        : "",
+    }));
+  
+    const downloadFile = (filename: string, content: string, mimeType: string) => {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    };
+  
+    const exportCsv = () => {
+      const rows = [
+        Object.keys(exportRows[0] || {}).join(","),
+        ...exportRows.map((row) =>
+          Object.values(row)
+            .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+            .join(",")
+        ),
+      ].join("\r\n");
+  
+      downloadFile("complaints.csv", rows, "text/csv;charset=utf-8;");
+    };
+  
+    const exportExcel = () => {
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Complaints");
+      XLSX.writeFile(workbook, "complaints.xlsx");
+    };
+  
+    const copyTable = async () => {
+      const text = [
+        Object.keys(exportRows[0] || {}).join("\t"),
+        ...exportRows.map((row) => Object.values(row).join("\t")),
+      ].join("\r\n");
+  
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        console.error("Copy failed:", error);
+      }
+    };
+  
+    const printTable = () => {
+      if (!tableRef.current) return;
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return;
+  
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Complaints Report</title>
+            <style>
+              table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background: #f3f4f6; }
+              /* This hides the actions column and buttons */
+              .no-print, [data-column-id="actions"] { display: none !important; }
+            </style>
+          </head>
+          <body>${tableRef.current.innerHTML}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+  
+    const exportPdf = () => {
+      const doc = new jsPDF();
+      
+      // Define columns (excluding Actions)
+      const tableColumn = ["Ticket", "Account No", "Type", "Subtype", "Status", "Priority", "Source"];
+      
+      // Format data
+      const tableRows = complaints.map(c => [
+        c.ticket,
+        c.consumerId,
+        c.complaintTypeId,
+        c.complaintSubtypeId,
+        c.status.toUpperCase(),
+        c.priority,
+        c.source
+      ]);
+  
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 20,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] } // Professional Blue
+      });
+  
+      doc.text("My Complaints Report", 14, 15);
+      doc.save("complaints.pdf");
+    };
 
   const fetchComplaints = async (page: number, search?: string) => {
     setLoading(true);
@@ -291,7 +416,50 @@ export default function Complaints() {
             </Select>
           </div>
 
-          <div className="rounded-md border">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              className="bg-amber-500 text-white hover:bg-amber-600"
+              size="sm"
+              onClick={exportCsv}
+            >
+              Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-emerald-500 text-white hover:bg-emerald-600"
+              size="sm"
+              onClick={exportExcel}
+            >
+              Export Excel
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-red-500 text-white hover:bg-red-600"
+              size="sm"
+              onClick={exportPdf}
+            >
+              Export PDF
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-slate-500 text-white hover:bg-slate-600"
+              size="sm"
+              onClick={printTable}
+            >
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              className="bg-blue-500 text-white hover:bg-blue-600"
+              size="sm"
+              onClick={copyTable}
+            >
+              Copy
+            </Button>
+          </div>
+
+          <div className="rounded-md border" ref={tableRef}>
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
