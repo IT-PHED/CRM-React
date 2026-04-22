@@ -49,6 +49,7 @@ type Complaint = {
   telephoneNo: string;
   assignedTo?: string;
   dateResolved?: string | null;
+  modifiedDate?: string | null;
 };
 
 const statusColors: Record<string, string> = {
@@ -183,7 +184,7 @@ export default function Complaints() {
       const doc = new jsPDF();
       
       // Define columns (excluding Actions)
-      const tableColumn = ["Ticket", "Account No", "Type", "Subtype", "Status", "Priority", "Source"];
+      const tableColumn = ["Ticket", "Account No", "Type", "Subtype", "Status", "Priority", "Source", "Last Assigned To", "Last Worked At"];
       
       // Format data
       const tableRows = complaints.map(c => [
@@ -193,7 +194,18 @@ export default function Complaints() {
         c.complaintSubtypeId,
         c.status.toUpperCase(),
         c.priority,
-        c.source
+        c.source,
+        c.assignedTo ?? "",
+        c.modifiedDate
+          ? new Date(c.modifiedDate).toLocaleString("en-CA", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).replace(",", "")
+          : "",
       ]);
   
       autoTable(doc, {
@@ -204,7 +216,7 @@ export default function Complaints() {
         headStyles: { fillColor: [41, 128, 185] } // Professional Blue
       });
   
-      doc.text("My Complaints Report", 14, 15);
+      doc.text("All Complaints Report", 14, 15);
       doc.save("complaints.pdf");
     };
 
@@ -314,10 +326,10 @@ export default function Complaints() {
       header: "Last Assigned To",
     },
     {
-      accessorKey: "dateResolved",
-      header: "Resolved At",
+      accessorKey: "modifiedDate",
+      header: "Last Acted On",
       cell: ({ row }) => {
-        const rawDate = row.getValue("dateResolved") as string | undefined | null;
+        const rawDate = row.getValue("modifiedDate") as string | undefined | null;
         const formattedDate = rawDate
           ? new Date(rawDate).toLocaleString("en-CA", {
               year: "numeric",

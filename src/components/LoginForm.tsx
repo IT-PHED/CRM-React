@@ -139,7 +139,7 @@ export default function Login() {
                 />
                 <span>Remember me</span>
               </label>
-              <button type="button" className="link">
+              <button type="button" className="link" onClick={() => window.open('https://onboarding.phed.com.ng/', '_blank')}>
                 Forgot password?
               </button>
             </div>
